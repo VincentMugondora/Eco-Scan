@@ -23,7 +23,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
       {/* Nav */}
       <nav className="flex flex-col gap-1.5 mb-auto -mx-2">
         {tabs.map((tab) => {
-          const isActive = tab.id === "pantry"; // Hardcode for screenshot pixel match
+          const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
@@ -47,9 +47,9 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
       </nav>
 
       {/* Sustainability Score */}
-      <Card className="mt-8 bg-[#F8FAFC] border-none shadow-none pb-5 pt-4 px-4 rounded-3xl relative overflow-hidden">
+      <Card className="mt-8 bg-white border border-[#D1EBE3] shadow-sm pb-5 pt-4 px-4 rounded-3xl relative overflow-hidden">
         <div className="flex justify-between items-start mb-1">
-          <h4 className="text-[10px] font-black tracking-widest uppercase text-[#107050]">Impact Score</h4>
+          <h4 className="text-[10px] font-black tracking-widest uppercase text-[#107050]">Sustainability Score</h4>
           <svg className="w-3.5 h-3.5 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
             <path d="M19 9l-7 -7l-7 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />

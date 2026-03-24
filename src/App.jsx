@@ -7,9 +7,10 @@ import { Recipes } from "./components/screens/Recipes";
 import { BottomNav } from "./components/layout/BottomNav";
 import { Sidebar } from "./components/layout/Sidebar";
 import { RightSidebar } from "./components/layout/RightSidebar";
+import { Globe, Clock, HelpCircle } from "lucide-react";
 
 const App = () => {
-  const [activeTab, setActiveTab ] = useState("home");
+  const [activeTab, setActiveTab ] = useState("impact"); // Set default to impact to see recipes
 
   const renderScreen = () => {
     switch (activeTab) {
@@ -33,8 +34,8 @@ const App = () => {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Main Viewport */}
-      <main className="flex-1 overflow-y-auto w-full h-screen relative scroll-smooth flex justify-center bg-[#F8FAFC] pb-20 lg:pb-0">
-         <div className="w-full max-w-4xl lg:px-10">
+      <main className="flex-1 overflow-y-auto w-full h-screen relative scroll-smooth flex justify-center bg-white lg:bg-white pb-20 lg:pb-[52px]">
+         <div className="w-full max-w-4xl lg:px-6">
            <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
@@ -51,7 +52,9 @@ const App = () => {
       </main>
 
       {/* Right Sidebar (Desktop Only) */}
-      <RightSidebar />
+      <div className="pb-[52px] h-screen overflow-hidden">
+        <RightSidebar activeTab={activeTab} />
+      </div>
 
       {/* Persistent Bottom Nav (Mobile Only) */}
       <div className="lg:hidden">
@@ -60,6 +63,19 @@ const App = () => {
         )}
       </div>
       
+      {/* Desktop Footer spanning main area and right sidebar */}
+      <div className="hidden lg:flex fixed bottom-0 right-0 left-[260px] h-[52px] bg-white border-t border-[#E2E8F0] z-40 items-center justify-between px-8 text-[11px] font-bold text-[#64748B]">
+         <div className="flex items-center gap-6">
+            <span className="flex items-center gap-2"><Globe className="w-3.5 h-3.5" strokeWidth={2.5} /> Zimbabwe Dataset v2.4</span>
+            <span className="flex items-center gap-2"><Clock className="w-3.5 h-3.5" strokeWidth={2.5} /> Last synced: 2h ago</span>
+         </div>
+         <div className="flex items-center gap-5">
+            <a href="#" className="hover:text-[#0F172A] transition-colors">Privacy</a>
+            <a href="#" className="hover:text-[#0F172A] transition-colors">Sustainability Terms</a>
+            <a href="#" className="flex items-center gap-1.5 text-[#107050] hover:text-[#065A3F] transition-colors"><HelpCircle className="w-3.5 h-3.5" strokeWidth={2.5} /> Help</a>
+         </div>
+      </div>
+
       {/* Hide scanner footer padding trick */}
       {activeTab === 'scan' && (
         <div className="fixed top-12 left-6 z-50 lg:hidden">
