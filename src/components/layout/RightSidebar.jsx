@@ -55,44 +55,44 @@ export const RightSidebar = () => {
 
       {/* Recent Activity */}
       <div>
-        <h3 className="text-[11px] font-black uppercase tracking-widest text-[#64748B] mb-5">Recent Activity</h3>
-        <div className="flex flex-col gap-6">
-          <div className="flex gap-4 items-start">
-            <div className="w-9 h-9 border border-[#E2E8F0] rounded-full bg-white flex items-center justify-center shrink-0">
-              <Scan className="w-4 h-4 text-[#64748B]" />
+        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#64748B] mb-4">Recent Activity</h3>
+        <div className="flex flex-col gap-5">
+          <div className="flex gap-3 items-start">
+            <div className="w-8 h-8 border border-[#E2E8F0] rounded-full bg-white flex items-center justify-center shrink-0">
+              <Scan className="w-3.5 h-3.5 text-[#64748B]" />
             </div>
             <div className="pt-0.5">
-              <p className="text-[14px] font-bold text-[#0F172A] leading-tight mb-0.5">Scanned 4 items</p>
-              <p className="text-[12px] text-[#94A3B8] font-medium">2h ago</p>
+              <p className="text-[13px] font-bold text-[#0F172A] leading-tight mb-0.5">Scanned 4 items</p>
+              <p className="text-[11px] text-[#94A3B8] font-medium">2h ago</p>
             </div>
           </div>
-          <div className="flex gap-4 items-start">
-            <div className="w-9 h-9 border border-[#E2E8F0] rounded-full bg-white flex items-center justify-center shrink-0">
-              <Utensils className="w-4 h-4 text-[#64748B]" />
+          <div className="flex gap-3 items-start">
+            <div className="w-8 h-8 border border-[#E2E8F0] rounded-full bg-white flex items-center justify-center shrink-0">
+              <Utensils className="w-3.5 h-3.5 text-[#64748B]" />
             </div>
             <div className="pt-0.5">
-              <p className="text-[14px] font-bold text-[#0F172A] leading-tight mb-0.5">Cooked Curry Medley</p>
-              <p className="text-[12px] text-[#94A3B8] font-medium">Yesterday</p>
+              <p className="text-[13px] font-bold text-[#0F172A] leading-tight mb-0.5">Cooked Curry Medley</p>
+              <p className="text-[11px] text-[#94A3B8] font-medium">Yesterday</p>
             </div>
           </div>
-          <div className="flex gap-4 items-start">
-            <div className="w-9 h-9 border border-[#E2E8F0] rounded-full bg-white flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4 text-[#64748B]" />
+          <div className="flex gap-3 items-start">
+            <div className="w-8 h-8 border border-[#E2E8F0] rounded-full bg-white flex items-center justify-center shrink-0">
+              <Sparkles className="w-3.5 h-3.5 text-[#64748B]" />
             </div>
             <div className="pt-0.5">
-              <p className="text-[14px] font-bold text-[#0F172A] leading-tight mb-0.5">Impact Milestone hit!</p>
-              <p className="text-[12px] text-[#94A3B8] font-medium">2d ago</p>
+              <p className="text-[13px] font-bold text-[#0F172A] leading-tight mb-0.5">Impact Milestone hit!</p>
+              <p className="text-[11px] text-[#94A3B8] font-medium">2d ago</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-auto pt-10 pb-4">
-        <div className="border-[1.5px] border-dashed border-[#E2E8F0] bg-white rounded-2xl p-6 flex flex-col items-center text-center">
-          <Calendar className="w-7 h-7 text-[#94A3B8] mb-3" strokeWidth={1.5} />
-          <h4 className="font-bold text-[14px] text-[#0F172A] mb-1.5">Weekly Meal Planner</h4>
-          <p className="text-[12px] text-[#64748B] mb-5 leading-relaxed px-2">Upgrade to Pro to sync with your Google Calendar and automate shopping lists.</p>
-          <Button variant="outline" className="w-full text-[13px] font-bold h-10 rounded-xl border-[#E2E8F0] text-[#4A5568] hover:bg-[#F8FAFC]">Explore Pro</Button>
+      <div className="mt-auto pt-8 pb-2">
+        <div className="border-[1.5px] border-dashed border-[#E2E8F0] bg-white rounded-2xl p-5 flex flex-col items-center text-center">
+          <Calendar className="w-6 h-6 text-[#94A3B8] mb-2.5" strokeWidth={1.5} />
+          <h4 className="font-bold text-[13px] text-[#0F172A] mb-1.5">Weekly Meal Planner</h4>
+          <p className="text-[11px] text-[#64748B] mb-4 leading-relaxed px-1">Upgrade to Pro to sync with your Google Calendar and automate shopping lists.</p>
+          <Button variant="outline" className="w-full text-[12px] font-bold h-9 rounded-xl border-[#E2E8F0] text-[#4A5568] hover:bg-[#F8FAFC]">Explore Pro</Button>
         </div>
       </div>
     </aside>

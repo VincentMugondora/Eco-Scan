@@ -41,8 +41,8 @@ const Pantry = () => {
       {/* Header - Desktop (Command Center) */}
       <div className="hidden lg:flex justify-between items-end px-2">
         <div>
-           <h1 className="text-[28px] font-black text-[#0F172A] leading-tight">Pantry Command</h1>
-           <p className="text-[15px] text-[#64748B] mt-1 font-medium">Manage your high-utility inventory and reduce waste</p>
+           <h1 className="text-[24px] font-black text-[#0F172A] leading-tight">Pantry Command</h1>
+           <p className="text-[14px] text-[#64748B] mt-1 font-medium">Manage your high-utility inventory and reduce waste</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative w-64">
@@ -50,19 +50,19 @@ const Pantry = () => {
             <input 
               type="text" 
               placeholder="Search inventory..." 
-              className="w-full h-11 bg-white border border-[#E2E8F0] shadow-sm rounded-xl pl-10 pr-4 text-[14px] text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
+              className="w-full h-10 bg-white border border-[#E2E8F0] shadow-sm rounded-xl pl-10 pr-4 text-[13px] text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
             />
           </div>
-          <Button variant="outline" className="h-11 rounded-xl bg-white border-[#E2E8F0] text-[#4A5568] px-4 font-bold flex gap-2 h-11 text-[14px] shadow-sm hover:bg-[#F8FAFC]">
+          <Button variant="outline" className="h-10 rounded-xl bg-white border-[#E2E8F0] text-[#4A5568] px-4 font-bold flex gap-2 text-[13px] shadow-sm hover:bg-[#F8FAFC]">
             <Filter className="w-4 h-4 text-[#94A3B8]" /> Filters
           </Button>
-          <div className="relative w-11 h-11 ml-3 cursor-pointer select-none">
+          <div className="relative w-10 h-10 ml-3 cursor-pointer select-none">
              <img 
                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop" 
                alt="Profile" 
                className="w-full h-full rounded-full border-2 border-white shadow-sm object-cover"
              />
-             <div className="absolute top-0 right-0 w-3 h-3 bg-[#10B981] border-2 border-white rounded-full"></div>
+             <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-[#10B981] border-2 border-white rounded-full"></div>
           </div>
         </div>
       </div>
@@ -103,17 +103,17 @@ const Pantry = () => {
       {/* Inventory List */}
       <div className="px-4 lg:px-2 lg:mt-6">
         <div className="flex justify-between items-center mb-4 lg:mb-5">
-          <h3 className="text-[10px] lg:text-[18px] lg:capitalize lg:font-black lg:tracking-normal font-black uppercase tracking-widest text-[#0F172A] flex items-center gap-3">
+          <h3 className="text-[10px] lg:text-[15px] lg:capitalize lg:font-black lg:tracking-normal font-black uppercase tracking-widest text-[#0F172A] flex items-center gap-3">
              <span className="lg:hidden text-[#64748B]">All Items ({PANTRY_ITEMS.length})</span>
              <span className="hidden lg:inline">Current Inventory</span>
-             <Badge className="hidden lg:flex bg-[#E6F4F0] text-primary text-[12px] px-2.5 py-0.5 rounded-md font-bold border-none shadow-none">{PANTRY_ITEMS.length} Items Total</Badge>
+             <Badge className="hidden lg:flex bg-[#E6F4F0] text-primary text-[11px] px-2.5 py-0.5 rounded-md font-bold border-none shadow-none">{PANTRY_ITEMS.length} Items Total</Badge>
           </h3>
-          <div className="text-primary text-[10px] lg:text-[13px] font-bold lg:font-bold lg:tracking-normal lg:text-[#64748B] uppercase tracking-widest flex items-center gap-1.5 cursor-pointer">
+          <div className="text-primary text-[10px] lg:text-[12px] font-bold lg:font-bold lg:tracking-normal lg:text-[#64748B] uppercase tracking-widest flex items-center gap-1.5 cursor-pointer">
             <span className="hidden lg:inline font-medium">Sorted by:</span> <span className="lg:text-[#0F172A]">Expiry (Closest)</span> <Filter className="w-3 h-3 lg:hidden" /> <svg className="w-4 h-4 hidden lg:block text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 lg:gap-3.5">
+        <div className="flex flex-col gap-3 lg:gap-3">
           {PANTRY_ITEMS.map((item) => {
             const isSelected = selectedItems.includes(item.id);
             
@@ -121,7 +121,7 @@ const Pantry = () => {
               <Card 
                 key={item.id} 
                 className={cn(
-                  "p-3 lg:py-3 lg:px-4 flex items-center gap-3 transition-colors border",
+                  "p-3 lg:py-2.5 lg:px-4 flex items-center gap-3 transition-colors border",
                   isSelected 
                     ? "bg-[#F3FAF7] border-primary/30 shadow-[0_2px_10px_-4px_rgba(6,122,87,0.1)]" 
                     : "bg-white border-[#E2E8F0] shadow-sm hover:border-gray-300"
@@ -132,11 +132,11 @@ const Pantry = () => {
                    <button 
                      onClick={() => toggleItem(item.id)}
                      className={cn(
-                       "w-5 h-5 rounded-[4px] flex items-center justify-center border transition-colors",
+                       "w-4 h-4 rounded-[4px] flex items-center justify-center border transition-colors",
                        isSelected ? "bg-primary border-primary" : "bg-white border-[#CBD5E1] hover:border-[#94A3B8]"
                      )}
                    >
-                     {isSelected && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+                     {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                    </button>
                 </div>
 
@@ -149,7 +149,7 @@ const Pantry = () => {
                 </div>
 
                 {/* Common Image */}
-                <div className="w-12 h-12 lg:w-[52px] lg:h-[52px] rounded-xl overflow-hidden shrink-0 bg-[#F1F5F9] border border-[#E2E8F0]">
+                <div className="w-12 h-12 lg:w-[48px] lg:h-[48px] rounded-xl overflow-hidden shrink-0 bg-[#F1F5F9] border border-[#E2E8F0]">
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover mix-blend-multiply opacity-90" />
                 </div>
 
@@ -159,11 +159,11 @@ const Pantry = () => {
                   {/* Info column */}
                   <div className="flex-1 flex flex-col justify-center">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <h4 className="font-black text-sm lg:text-[15px] truncate text-[#0F172A]">{item.name}</h4>
+                      <h4 className="font-black text-sm lg:text-[14px] truncate text-[#0F172A]">{item.name}</h4>
                       <Badge className="hidden lg:inline-flex bg-[#F1F5F9] text-[#64748B] px-2 py-0 text-[10px] uppercase tracking-wider font-bold border-none h-5 shadow-none items-center">{item.category}</Badge>
                     </div>
                     <p className="text-[10px] text-text-secondary lg:hidden">{item.category}</p>
-                    <div className="hidden lg:flex items-center gap-3 text-[12px] text-[#64748B] font-medium">
+                    <div className="hidden lg:flex items-center gap-3 text-[11px] text-[#64748B] font-medium">
                        <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5" /><path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2z" /><path d="M6 12v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3" /></svg> {item.quantity}</span>
                        <span className="w-1 h-1 rounded-full bg-[#CBD5E1]"></span>
                        <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" strokeWidth={2.5} /> {item.updatedAt}</span>
@@ -181,14 +181,14 @@ const Pantry = () => {
                   </div>
 
                   {/* Desktop Right Side: Expiry Badge + Freshness */}
-                  <div className="hidden lg:flex items-center gap-8 pl-4 w-[280px] justify-end">
+                  <div className="hidden lg:flex items-center gap-8 pl-4 w-[260px] justify-end">
                      
                      {/* Expiry Badge */}
-                     <div className="w-[100px] flex justify-end">
+                     <div className="w-[90px] flex justify-end">
                         <Badge 
                            variant="outline" 
                            className={cn(
-                              "text-[12px] font-bold px-3 py-1 border-none shadow-none whitespace-nowrap",
+                              "text-[11px] font-bold px-2.5 py-1 border-none shadow-none whitespace-nowrap",
                               item.status === 'expired' ? 'bg-[#FEF2F2] text-[#EF4444]' : 
                               item.status === 'soon' ? 'bg-[#FFFBEB] text-[#F59E0B]' : 
                               'bg-[#F0FDF4] text-[#10B981]'
@@ -199,18 +199,18 @@ const Pantry = () => {
                      </div>
 
                      {/* Freshness Bar */}
-                     <div className="flex flex-col gap-1.5 w-[140px]">
-                        <div className="flex justify-between items-center text-[11px]">
+                     <div className="flex flex-col gap-1.5 w-[120px]">
+                        <div className="flex justify-between items-center text-[10px]">
                            <span className="text-[#64748B] font-bold tracking-wide uppercase">Freshness</span>
                            <span className={cn(
-                              "font-black",
+                              "font-black text-[11px]",
                               item.freshness <= 20 ? 'text-[#EF4444]' : item.freshness <= 50 ? 'text-[#F59E0B]' : 'text-[#10B981]'
                            )}>{item.freshness || 10}%</span>
                         </div>
                         <ProgressBar 
                           value={item.freshness || 10} 
                           variant={item.freshness <= 20 ? 'danger' : item.freshness <= 50 ? 'warning' : 'primary'} 
-                          className="h-[6px] bg-[#F1F5F9]" 
+                          className="h-[5px] bg-[#F1F5F9]" 
                         />
                      </div>
                   </div>
@@ -225,9 +225,9 @@ const Pantry = () => {
                 </div>
 
                 {/* Desktop Kebab Menu */}
-                <div className="hidden lg:flex justify-end w-8 pl-2">
-                  <button className="text-[#94A3B8] hover:text-[#0F172A] p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors">
-                     <MoreVertical className="w-5 h-5" strokeWidth={2} />
+                <div className="hidden lg:flex justify-end w-6 pl-2">
+                  <button className="text-[#94A3B8] hover:text-[#0F172A] p-1 rounded-lg hover:bg-[#F1F5F9] transition-colors">
+                     <MoreVertical className="w-4 h-4" strokeWidth={2} />
                   </button>
                 </div>
 
@@ -244,16 +244,16 @@ const Pantry = () => {
             initial={{ y: 150, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 150, opacity: 0 }}
-            className="fixed bottom-24 left-4 right-4 lg:left-0 lg:right-0 lg:max-w-4xl lg:mx-auto lg:bottom-12 z-40 transition-all cursor-default flex justify-center lg:px-10"
+            className="fixed bottom-24 left-4 right-4 lg:left-[50%] lg:-translate-x-1/2 lg:w-max lg:bottom-12 z-40 transition-all cursor-default"
           >
-            <Card className="shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-[#E2E8F0] p-3 lg:p-4 flex items-center justify-between gap-4 lg:gap-8 bg-white/95 backdrop-blur-xl rounded-[24px] lg:rounded-full w-full mx-2">
+            <Card className="shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-[#E2E8F0] p-2.5 lg:p-3 flex items-center justify-between gap-4 lg:gap-8 bg-white/95 backdrop-blur-xl rounded-[24px] lg:rounded-full w-full mx-2">
                <div className="flex items-center gap-3 lg:gap-6 lg:pl-4">
                   
                   {/* Desktop Label */}
                   <div className="hidden lg:flex flex-col">
-                     <p className="text-[10px] font-black text-[#64748B] uppercase tracking-widest leading-tight mb-0.5">Bulk Management</p>
-                     <p className="text-[15px] font-black text-[#0F172A] leading-tight flex items-center gap-2">
-                       <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
+                     <p className="text-[9px] font-black text-[#64748B] uppercase tracking-widest leading-tight mb-0.5">Bulk Management</p>
+                     <p className="text-[14px] font-black text-[#0F172A] leading-tight flex items-center gap-2">
+                       <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
                        {selectedItems.length} items selected
                      </p>
                   </div>
@@ -269,17 +269,17 @@ const Pantry = () => {
                      </div>
                   </div>
                   
-                  <div className="hidden lg:block w-[1px] h-10 bg-[#E2E8F0] ml-2" />
+                  <div className="hidden lg:block w-[1px] h-8 bg-[#E2E8F0] ml-2" />
                   
-                  <Button variant="outline" className="hidden lg:flex h-11 rounded-full px-6 bg-white border-[#E2E8F0] text-[#4A5568] hover:bg-[#F8FAFC] focus:bg-[#F8FAFC] transition-colors active:scale-95 font-bold text-[14px]" onClick={toggleAll}>
+                  <Button variant="outline" className="hidden lg:flex h-10 rounded-full px-5 bg-white border-[#E2E8F0] text-[#4A5568] hover:bg-[#F8FAFC] focus:bg-[#F8FAFC] transition-colors active:scale-95 font-bold text-[13px]" onClick={toggleAll}>
                     {selectedItems.length === PANTRY_ITEMS.length ? 'Deselect All' : 'Select All Expiring'}
                   </Button>
                </div>
                
-               <Button className="rounded-xl px-4 py-2 lg:h-12 lg:rounded-full lg:px-8 flex items-center gap-2.5 bg-primary hover:bg-[#056648] text-white shadow-md shadow-primary/20 focus:outline-none transition-colors" onClick={() => {}}>
+               <Button className="rounded-xl px-4 py-2 lg:h-10 lg:rounded-full lg:px-6 flex items-center gap-2 bg-primary hover:bg-[#056648] text-white shadow-md shadow-primary/20 focus:outline-none transition-colors" onClick={() => {}}>
                  <Target className="w-4 h-4 lg:hidden" /> 
-                 <span className="hidden lg:inline"><ChefHat className="w-5 h-5" strokeWidth={2.5} /></span>
-                 <span className="font-bold text-[15px] hidden lg:inline pt-0.5">AI Recipe for These</span>
+                 <span className="hidden lg:inline"><ChefHat className="w-4 h-4" strokeWidth={2.5} /></span>
+                 <span className="font-bold text-[14px] hidden lg:inline pt-0.5">AI Recipe for These</span>
                </Button>
             </Card>
           </motion.div>
