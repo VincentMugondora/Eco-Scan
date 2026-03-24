@@ -27,14 +27,14 @@ const App = () => {
   };
 
   return (
-    <div className="mx-auto min-h-screen bg-neutral-bg flex flex-col lg:grid lg:grid-cols-[280px_1fr_350px] 2xl:max-w-[1600px] shadow-2xl overflow-hidden relative">
+    <div className="mx-auto min-h-screen bg-[#F8FAFC] flex flex-col lg:grid lg:grid-cols-[260px_1fr_320px] xl:grid-cols-[260px_1fr_350px] shadow-2xl overflow-hidden relative font-sans">
       
       {/* Left Sidebar (Desktop Only) */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Main Viewport */}
-      <main className="flex-1 overflow-y-auto w-full h-screen relative scroll-smooth flex justify-center lg:bg-white pb-20 lg:pb-0">
-         <div className="w-full max-w-2xl lg:px-8">
+      <main className="flex-1 overflow-y-auto w-full h-screen relative scroll-smooth flex justify-center bg-[#F8FAFC] pb-20 lg:pb-0">
+         <div className="w-full max-w-4xl lg:px-10">
            <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
@@ -78,4 +78,5 @@ const App = () => {
 };
 
 export default App;
+
 
