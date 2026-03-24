@@ -1,108 +1,81 @@
 export const PANTRY_ITEMS = [
   {
     id: 1,
-    name: "Fresh Spinach",
-    category: "Vegetables",
-    expiryDate: "2026-03-26",
-    status: "soon",
-    image: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?q=80&w=200&auto=format&fit=crop",
-    quantity: "250g",
+    name: "Mealie-meal (Sadza Flour)",
+    category: "GRAINS",
+    quantity: "5kg",
+    status: "fresh",
+    expiryDate: "2026-07-20",
+    image: "https://images.unsplash.com/photo-1596647466548-dbbdbe15822e?q=80&w=200&auto=format&fit=crop",
     updatedAt: "Updated 2h ago",
-    freshness: 10,
-    urgency: "Red"
+    freshness: 90,
+    weight: "5kg",
+    daysLeft: "120 days left",
   },
   {
     id: 2,
-    name: "Greek Yogurt",
-    category: "Dairy",
-    expiryDate: "2026-03-27",
-    status: "soon",
-    image: "https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=200&auto=format&fit=crop",
-    quantity: "500ml",
+    name: "Dried Mopane Worms",
+    category: "PROTEIN",
+    quantity: "500g",
+    status: "fresh",
+    expiryDate: "2026-06-20",
+    image: "https://images.unsplash.com/photo-1621034969230-0eb2c366ffde?q=80&w=200&auto=format&fit=crop",
     updatedAt: "Updated 2h ago",
-    freshness: 40,
-    urgency: "Yellow"
+    freshness: 100,
+    weight: "500g",
+    daysLeft: "90 days left",
   },
   {
     id: 3,
-    name: "Bell Peppers",
-    category: "Vegetables",
-    expiryDate: "2026-03-29",
-    status: "fresh",
-    image: "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?q=80&w=200&auto=format&fit=crop",
-    quantity: "3 units",
-    updatedAt: "Updated 2h ago",
-    freshness: 40,
-    urgency: "Yellow"
-  },
-  {
-    id: 4,
     name: "Oat Milk",
-    category: "Pantry",
-    expiryDate: "2026-03-25",
-    status: "soon",
-    image: "https://images.unsplash.com/photo-1600788886242-5c96aabe3757?q=80&w=200&auto=format&fit=crop",
+    category: "DAIRY",
     quantity: "1L",
+    status: "expired",
+    expiryDate: "2026-03-25",
+    image: "https://images.unsplash.com/photo-1563636619-e9143da7973b?q=80&w=200&auto=format&fit=crop",
     updatedAt: "Updated 2h ago",
     freshness: 10,
-    urgency: "Red"
+    weight: "1L",
+    daysLeft: "1 days left",
+  }
+];
+
+export const ACTION_REQUIRED_ITEMS = [
+  {
+    id: 101,
+    name: "Fresh Spinach",
+    quantity: "250g",
+    timeLeft: "18h left",
+    image: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=200&q=80"
   },
   {
-    id: 5,
-    name: "Organic Eggs",
-    category: "Dairy",
-    expiryDate: "2026-04-05",
-    status: "fresh",
-    image: "https://images.unsplash.com/photo-1598965675045-45c5e72e33f6?q=80&w=200&auto=format&fit=crop",
-    quantity: "12 pack",
-    updatedAt: "Updated 2h ago",
-    freshness: 80,
-    urgency: "Green"
-  },
-  {
-    id: 6,
-    name: "Chicken Breast",
-    category: "Proteins",
-    expiryDate: "2026-03-26",
-    status: "soon",
-    image: "https://images.unsplash.com/photo-1604503468506-a8da13d11b51?q=80&w=200&auto=format&fit=crop",
-    quantity: "400g",
-    updatedAt: "Updated 2h ago",
-    freshness: 10,
-    urgency: "Red"
+    id: 102,
+    name: "Kapenta (Dried)",
+    quantity: "100g",
+    timeLeft: "36h left",
+    image: "https://images.unsplash.com/photo-1599839619722-39751411ea63?w=200&q=80"
   }
 ];
 
 export const RECIPES = [
   {
     id: 1,
-    title: "Leftover Veggie Soup",
-    match: 85,
-    time: "25 min",
-    difficulty: "Easy",
-    image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=400&auto=format&fit=crop",
+    title: "Sadza & Leafy Greens",
+    match: 100,
+    time: "20 min",
+    difficulty: "Beginner",
+    image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80",
     wasteSaved: "0.8kg",
-    inPantry: ["Covo", "Soft Tomatoes", "Carrots"],
-    needed: ["Onion", "Vegetable Broth"]
-  },
-  {
-    id: 2,
-    title: "Covo & Peanut Stew",
-    match: 92,
-    time: "30 min",
-    difficulty: "Medium",
-    image: "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?q=80&w=400&auto=format&fit=crop",
-    wasteSaved: "0.5kg",
-    inPantry: ["Covo", "Peanut Butter"],
-    needed: ["Spices"]
+    inPantry: ["Mealie-meal", "Spinach"],
+    needed: []
   }
 ];
 
 export const IMPACT_STATS = {
   weeklyCO2: 12.4,
   goalCO2: 15,
-  waterSaved: 18480,
-  mealsSaved: 2,
+  waterSaved: 1240,
+  mealsSaved: 18,
   level: 4,
   sustainabilityScore: 84
 };
