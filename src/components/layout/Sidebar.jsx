@@ -17,40 +17,40 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
           <Leaf className="text-white w-5 h-5" />
         </div>
-        <span className="text-xl font-black text-[#1A202C]">Eco-Scan</span>
+        <span className="text-lg font-black text-[#1A202C]">Eco-Scan</span>
       </div>
 
       {/* Nav */}
-      <nav className="flex flex-col gap-1.5 mb-auto">
+      <nav className="flex flex-col gap-1 mb-auto">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                 isActive 
                   ? 'bg-primary text-white font-bold shadow-md shadow-primary/20' 
                   : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A] font-medium'
               }`}
             >
-              <tab.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-[#94A3B8]'}`} strokeWidth={isActive ? 2.5 : 2} />
-              <span className="text-[15px]">{tab.label}</span>
+              <tab.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#94A3B8]'}`} strokeWidth={isActive ? 2.5 : 2} />
+              <span className="text-[13px]">{tab.label}</span>
             </button>
           )
         })}
         
-        <div className="mt-8 mb-2 px-4 flex items-center gap-4 py-3 rounded-xl transition-all text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A] font-medium cursor-pointer">
-          <Settings className="w-5 h-5 text-[#94A3B8]" strokeWidth={2} />
-          <span className="text-[15px]">Settings</span>
+        <div className="mt-8 mb-2 px-4 flex items-center gap-3 py-3 rounded-xl transition-all text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A] font-medium cursor-pointer">
+          <Settings className="w-4 h-4 text-[#94A3B8]" strokeWidth={2} />
+          <span className="text-[13px]">Settings</span>
         </div>
       </nav>
 
       {/* Sustainability Score */}
-      <Card className="mt-8 bg-[#F8FAFC] border-none shadow-none p-5 rounded-2xl relative overflow-hidden">
-        <div className="flex justify-between items-start mb-4">
-          <h4 className="text-[13px] font-bold text-primary">Sustainability Score</h4>
-          <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <Card className="mt-8 bg-[#F8FAFC] border-none shadow-none p-4 rounded-2xl relative overflow-hidden">
+        <div className="flex justify-between items-start mb-3">
+          <h4 className="text-[11px] font-bold text-primary">Sustainability Score</h4>
+          <svg className="w-3.5 h-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v11" className="opacity-0" />
             {/* Using a trend-up icon specifically */}
@@ -59,9 +59,9 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
           </svg>
         </div>
         
-        <div className="flex items-baseline gap-1 my-2">
-          <span className="text-[40px] font-black text-[#0F172A] leading-none tracking-tight">84</span>
-          <span className="text-[13px] text-[#64748B] font-bold">/ 100</span>
+        <div className="flex items-baseline gap-1 my-1">
+          <span className="text-[32px] font-black text-[#0F172A] leading-none tracking-tight">84</span>
+          <span className="text-[11px] text-[#64748B] font-bold">/ 100</span>
         </div>
         
         {/* Real sparkline line */}
