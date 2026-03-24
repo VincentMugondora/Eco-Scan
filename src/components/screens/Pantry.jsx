@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, Filter, Scan, Target, Check, MoreVertical, Clock } from "lucide-react";
+import { Search, Filter, Scan, Target, Check, MoreVertical, Clock, ChefHat } from "lucide-react";
 import { Card } from "../ui/Card";
 import { Badge } from "../ui/Badge";
 import { ProgressBar } from "../ui/ProgressBar";
