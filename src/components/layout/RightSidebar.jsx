@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChefHat, ArrowRight, Scan, Utensils, Sparkles, Calendar, ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChefHat, ArrowRight, Scan, Utensils, Sparkles, Calendar, ChevronRight, ChevronLeft, Clock } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
