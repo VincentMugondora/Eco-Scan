@@ -18,13 +18,46 @@ const chartData = [
   { day: 'Sun', co2: 12.4 },
 ];
 
+import { usePantry } from "../../hooks/usePantry";
+
 const Dashboard = ({ setActiveTab }) => {
-  const urgentItems = [...PANTRY_ITEMS].filter(item => item.status === "expired" || item.status === "soon").slice(0, 3);
+  const { items, loading } = usePantry();
+
+  // Calculate Scientific Carbon Impact: C_total = sum(W_i * I_i)
+  const totalImpact = items.reduce((acc, item) => {
+    const weight = item.weight_kg || 0.5; // Default 500g if unknown
+    const factor = item.carbon_impact_factor || 2.5; 
+    return acc + (weight * factor);
+  }, 0);
+
+  const urgentItems = items.filter(item => {
+    const days = Math.floor((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    return days <= 2 && !item.is_cooked;
+  }).slice(0, 3);
+
+  // Generate dynamic chart data based on items added per day (simplified for demo)
+  const dynamicChartData = [
+    { day: 'Mon', co2: totalImpact * 0.1 },
+    { day: 'Tue', co2: totalImpact * 0.3 },
+    { day: 'Wed', co2: totalImpact * 0.2 },
+    { day: 'Thu', co2: totalImpact * 0.5 },
+    { day: 'Fri', co2: totalImpact * 0.4 },
+    { day: 'Sat', co2: totalImpact * 0.8 },
+    { day: 'Sun', co2: totalImpact },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#F8FAFC]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#107050]"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col pb-32 pt-2 px-4 lg:px-8 max-w-7xl mx-auto w-full min-h-screen font-sans bg-[#F8FAFC]">
       
-      {/* Top App Bar area matches visual exactly */}
+      {/* Top App Bar */}
       <div className="flex justify-between items-center mb-6 pt-2">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden relative">
@@ -40,33 +73,32 @@ const Dashboard = ({ setActiveTab }) => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-           <button className="w-10 h-10 rounded-full bg-white border border-[#E2E8F0] shadow-sm flex items-center justify-center relative text-[#4A5568] hover:bg-[#F1F5F9] transition-colors">
+           <button className="w-10 h-10 rounded-full bg-white border border-[#E2E8F0] shadow-sm flex items-center justify-center text-[#4A5568] hover:bg-[#F1F5F9] transition-colors">
               <Search className="w-5 h-5" strokeWidth={2.5} />
            </button>
-           <button className="w-10 h-10 rounded-full bg-white border border-[#E2E8F0] shadow-sm flex items-center justify-center relative text-[#4A5568] hover:bg-[#F1F5F9] transition-colors">
+           <button className="w-10 h-10 rounded-full bg-white border border-[#E2E8F0] shadow-sm flex items-center justify-center text-[#4A5568] hover:bg-[#F1F5F9] transition-colors">
               <Bell className="w-5 h-5" strokeWidth={2.5} />
               <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-[#EF4444] border-2 border-white rounded-full"></div>
            </button>
         </div>
       </div>
 
-      {/* Hero Eco-Score Card with Recharts */}
+      {/* Hero Eco-Score Card */}
       <Card className="p-0 bg-[#107050] border-none shadow-[0_20px_40px_-15px_rgba(16,112,80,0.5)] rounded-[24px] lg:rounded-[32px] relative overflow-hidden mb-8 text-white min-h-[340px] lg:min-h-[300px]">
-        {/* Soft decorative blur */}
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-white opacity-10 rounded-full blur-[60px]"></div>
         <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-[#065A3F] opacity-50 rounded-full blur-[40px]"></div>
 
         <div className="p-6 lg:p-8 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-           <div className="flex-1">
+           <div>
              <div className="flex items-center gap-2 mb-3">
                <Sparkles className="w-4 h-4 text-[#A7F3D0]" />
                <span className="text-[11px] font-black uppercase tracking-widest text-[#D1EBE3]">Weekly Impact</span>
              </div>
              <h2 className="text-[32px] lg:text-[40px] font-black leading-tight tracking-tight mb-2">
-                12.4 <span className="text-[20px] font-bold text-[#D1EBE3]">kg CO₂e</span>
+                {totalImpact.toFixed(1)} <span className="text-[20px] font-bold text-[#D1EBE3]">kg CO₂e</span>
              </h2>
              <p className="text-[13px] text-[#A7F3D0] max-w-[200px] leading-relaxed font-medium">
-               You are in the top <span className="text-white font-bold">15%</span> of eco-savers in your community this week!
+               You are tracking <span className="text-white font-bold">{items.length}</span> items and reducing your footprint!
              </p>
              
              <button 
@@ -77,10 +109,9 @@ const Dashboard = ({ setActiveTab }) => {
             </button>
            </div>
            
-           {/* Chart Container */}
            <div className="w-full h-[180px] lg:h-[200px] relative">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
+                <AreaChart data={dynamicChartData}>
                   <defs>
                     <linearGradient id="colorCo2" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#A7F3D0" stopOpacity={0.8}/>
@@ -92,40 +123,28 @@ const Dashboard = ({ setActiveTab }) => {
                     itemStyle={{ color: '#10B981', fontWeight: 'bold' }}
                     labelStyle={{ color: '#94A3B8', fontSize: '10px' }}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="co2" 
-                    stroke="#A7F3D0" 
-                    strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorCo2)" 
-                  />
+                  <Area type="monotone" dataKey="co2" stroke="#A7F3D0" strokeWidth={3} fillOpacity={1} fill="url(#colorCo2)" />
                 </AreaChart>
               </ResponsiveContainer>
            </div>
         </div>
         
-        {/* Subtle bottom info bar */}
         <div className="bg-[#0A4A35]/40 backdrop-blur-md px-6 py-4 flex justify-between items-center z-10 relative border-t border-white/5">
            <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                  <span className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                 <span className="text-[11px] font-bold text-[#D1EBE3]">Meals Saved: {IMPACT_STATS.mealsSaved}</span>
-              </div>
-              <div className="hidden sm:flex items-center gap-2">
-                 <span className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
-                 <span className="text-[11px] font-bold text-[#D1EBE3]">Water: {IMPACT_STATS.waterSaved}L</span>
+                 <span className="text-[11px] font-bold text-[#D1EBE3]">Inventory Items: {items.length}</span>
               </div>
            </div>
            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-black text-[14px]">
-                 Lv. 4
+              <div className="w-12 h-8 rounded-full bg-white/10 flex items-center justify-center font-black text-[12px] px-2">
+                 Eco v1
               </div>
            </div>
         </div>
       </Card>
 
-      {/* Quick Access Grid exactly as dash1.png */}
+      {/* Quick Access Grid */}
       <div className="grid grid-cols-4 gap-3 mb-8">
         {[
           { id: "scan", icon: Plus, label: "Add", bg: "bg-white", border: "border-[#E2E8F0]", color: "text-[#0F172A]", iconBg: "bg-[#F8FAFC]", iconColor: "text-[#64748B]" },
@@ -146,44 +165,35 @@ const Dashboard = ({ setActiveTab }) => {
         ))}
       </div>
 
-      {/* Action Required / Expiring Soon */}
+      {/* Expiring Soon */}
       <div>
         <div className="flex justify-between items-center mb-4 px-1">
           <h3 className="font-black text-[18px] text-[#0F172A] tracking-tight">Expiring Soon</h3>
-          <button 
-            onClick={() => setActiveTab('pantry')}
-            className="text-[12px] font-bold text-[#107050] hover:underline"
-          >
-            See all
-          </button>
+          <button onClick={() => setActiveTab('pantry')} className="text-[12px] font-bold text-[#107050] hover:underline">See all</button>
         </div>
 
         <div className="flex flex-col gap-3">
           {urgentItems.map((item, index) => (
             <Card key={index} className="px-4 py-3 bg-white border border-[#E2E8F0] rounded-[20px] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-[#F8FAFC] border border-[#F1F5F9] shrink-0 p-1 relative">
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-[12px] mix-blend-multiply" />
+              <div className="w-14 h-14 rounded-2xl bg-[#F8FAFC] border border-[#F1F5F9] shrink-0 p-1">
+                <img src={item.image_url} alt={item.name} className="w-full h-full object-contain rounded-[12px] mix-blend-multiply" />
               </div>
-              
-              <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
-                 <h4 className="font-bold text-[15px] text-[#0F172A] mb-1 truncate leading-none">{item.name}</h4>
-                 <div className="flex items-center gap-1.5 mt-1.5">
-                   <ProgressBar value={item.status === 'expired' ? 100 : 80} variant={item.status === 'expired' ? 'danger' : 'warning'} className="w-full h-[5px] bg-[#F1F5F9]" />
-                 </div>
+              <div className="flex-1 min-w-0">
+                 <h4 className="font-bold text-[15px] text-[#0F172A] mb-1 truncate">{item.name}</h4>
+                 <ProgressBar value={item.freshness_percentage || 50} variant={item.freshness_percentage < 30 ? 'danger' : 'warning'} className="w-full h-[5px] bg-[#F1F5F9]" />
               </div>
-
-              <div className="flex flex-col items-end justify-center shrink-0">
-                 {item.status === 'expired' ? (
-                   <span className="text-[11px] font-black text-[#EF4444] bg-[#FEF2F2] px-2.5 py-1 rounded-md uppercase tracking-wide">Expired</span>
-                 ) : (
-                   <span className="text-[11px] font-black text-[#F59E0B] bg-[#FFFBEB] px-2.5 py-1 rounded-md uppercase tracking-wide">1 Day Left</span>
-                 )}
-                 <span className="text-[11px] font-bold text-[#64748B] mt-1.5">{item.quantity}</span>
+              <div className="text-right shrink-0">
+                 <span className={`text-[10px] font-black uppercase tracking-wide px-2 py-1 rounded-md ${item.freshness_percentage < 30 ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-500'}`}>
+                   {Math.floor((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}d Left
+                 </span>
               </div>
             </Card>
           ))}
         </div>
       </div>
+    </div>
+  );
+};
 
       {/* Perfect Pairings / AI Suggestions Placeholder aligned with dash1 styling */}
       <div className="mt-8 mb-4">
