@@ -195,7 +195,7 @@ const Dashboard = ({ setActiveTab }) => {
   );
 };
 
-      {/* Perfect Pairings / AI Suggestions Placeholder aligned with dash1 styling */}
+      {/* Perfect Pairings / AI Suggestions Placeholder */}
       <div className="mt-8 mb-4">
         <h3 className="font-black text-[18px] text-[#0F172A] tracking-tight px-1 mb-4 flex items-center gap-2">
            Recipes for you <Sparkles className="w-4 h-4 text-[#F59E0B]" />
@@ -243,7 +243,6 @@ const Dashboard = ({ setActiveTab }) => {
            </Card>
         </div>
       </div>
-
     </div>
   );
 };

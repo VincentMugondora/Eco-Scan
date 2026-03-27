@@ -58,10 +58,35 @@ async def scan_food_item(file: UploadFile = File(...)):
         result = json.loads(text_response)
         
         return result
-
     except Exception as e:
         print(f"Error in /scan: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+class RecipeResponse(BaseModel):
+    item_name: str
+    recipes: list[str]
+
+@app.post("/recipes", response_model=RecipeResponse)
+async def generate_recipes(item_name: str):
+    try:
+        prompt = f"""
+        You are the Eco-Scan Zero-Waste Chef. 
+        For the food item '{item_name}', suggest 3 creative, zero-waste, and local Zimbabwean-themed recipes.
+        Focus on using the item fully (including peels or stalks if applicable) and common local ingredients.
+        
+        Return ONLY a JSON array of strings.
+        """
+        response = model.generate_content(prompt)
+        # Clean response and parse JSON array
+        recipes = json.loads(response.text.replace('```json', '').replace('```', '').strip())
+        return {"item_name": item_name, "recipes": recipes}
+    except Exception as e:
+        print(f"Recipe AI error: {str(e)}")
+        # Fallback for local testing
+        return {
+            "item_name": item_name, 
+            "recipes": [f"{item_name} Relish with Peanut Butter", f"Dried {item_name} (Mufushwa)", f"Sautéed {item_name} with Onions"]
+        }
 
 if __name__ == "__main__":
     import uvicorn

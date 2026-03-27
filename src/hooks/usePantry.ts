@@ -21,7 +21,7 @@ export const usePantry = () => {
   const fetchItems = async () => {
     const { data, error } = await supabase
       .from("pantry_items")
-      .select("*")
+      .select("*, carbon_impact_factor")
       .order("expiry_date", { ascending: true });
 
     if (error) console.error("Error fetching pantry:", error);
