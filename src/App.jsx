@@ -4,6 +4,8 @@ import { Dashboard } from "./components/screens/Dashboard";
 import { Pantry } from "./components/screens/Pantry";
 import { Scanner } from "./components/screens/Scanner";
 import { Recipes } from "./components/screens/Recipes";
+import { SignIn } from "./components/screens/SignIn";
+import { SignUp } from "./components/screens/SignUp";
 import { BottomNav } from "./components/layout/BottomNav";
 import { Sidebar } from "./components/layout/Sidebar";
 import { RightSidebar } from "./components/layout/RightSidebar";
@@ -11,6 +13,8 @@ import { Globe, Clock, HelpCircle } from "lucide-react";
 
 const App = () => {
   const [activeTab, setActiveTab ] = useState("home"); // Set default to home to see dashboard
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authView, setAuthView] = useState("signIn"); // "signIn" or "signUp"
 
   const renderScreen = () => {
     switch (activeTab) {
@@ -23,15 +27,47 @@ const App = () => {
       case "impact":
         return <Recipes />;
       default:
-        return <Dashboard />;
+        return <Dashboard setActiveTab={setActiveTab} />;
     }
   };
+
+  const handleSignIn = () => setIsAuthenticated(true);
+  const handleSignUp = () => setIsAuthenticated(true);
+  const handleSignOut = () => setIsAuthenticated(false);
+
+  // Auth View Rendering
+  if (!isAuthenticated) {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={authView}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+          className="w-full h-full"
+        >
+          {authView === "signIn" ? (
+            <SignIn 
+              onSignIn={handleSignIn} 
+              onNavigateToSignUp={() => setAuthView("signUp")} 
+            />
+          ) : (
+            <SignUp 
+              onSignUp={handleSignUp} 
+              onNavigateToSignIn={() => setAuthView("signIn")} 
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
   return (
     <div className="mx-auto min-h-screen bg-[#F8FAFC] flex flex-col lg:grid lg:grid-cols-[260px_1fr_320px] xl:grid-cols-[260px_1fr_350px] shadow-2xl overflow-hidden relative font-sans">
       
       {/* Left Sidebar (Desktop Only) */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onSignOut={handleSignOut} />
 
       {/* Main Viewport */}
       <main className="flex-1 overflow-y-auto w-full h-screen relative scroll-smooth flex justify-center bg-white lg:bg-white pb-20 lg:pb-[52px]">
@@ -94,5 +130,3 @@ const App = () => {
 };
 
 export default App;
-
-

@@ -1,8 +1,8 @@
 import React from 'react';
-import { LayoutDashboard, UtensilsCrossed, ChefHat, Sparkles, Settings, Leaf, Droplets, Scale } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, ChefHat, Sparkles, Settings, Leaf, Droplets, Scale, LogOut } from 'lucide-react';
 import { Card } from '../ui/Card';
 
-export const Sidebar = ({ activeTab, setActiveTab }) => {
+export const Sidebar = ({ activeTab, setActiveTab, onSignOut }) => {
   const tabs = [
     { id: "home", icon: LayoutDashboard, label: "Dashboard" },
     { id: "pantry", icon: UtensilsCrossed, label: "Pantry Center" },
@@ -43,6 +43,14 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         <div className="mt-8 mb-2 px-6 flex items-center gap-3 py-3 rounded-xl transition-all text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A] font-medium cursor-pointer">
           <Settings className="w-4 h-4 text-[#94A3B8]" strokeWidth={2} />
           <span className="text-[13px]">Settings</span>
+        </div>
+
+        <div 
+          onClick={onSignOut}
+          className="px-6 flex items-center gap-3 py-3 rounded-xl transition-all text-[#EF4444] hover:bg-red-50 font-black cursor-pointer"
+        >
+          <LogOut className="w-4 h-4" strokeWidth={2.5} />
+          <span className="text-[13px]">Sign Out</span>
         </div>
       </nav>
 
