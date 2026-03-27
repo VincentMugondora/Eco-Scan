@@ -191,17 +191,13 @@ const Dashboard = ({ setActiveTab }) => {
           ))}
         </div>
       </div>
-    </div>
-  );
-};
-
       {/* Perfect Pairings / AI Suggestions Placeholder */}
-      <div className="mt-8 mb-4">
-        <h3 className="font-black text-[18px] text-[#0F172A] tracking-tight px-1 mb-4 flex items-center gap-2">
+      <div className="mt-8 mb-4 px-1">
+        <h3 className="font-black text-[18px] text-[#0F172A] tracking-tight mb-4 flex items-center gap-2">
            Recipes for you <Sparkles className="w-4 h-4 text-[#F59E0B]" />
         </h3>
         
-        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-6 px-1">
+        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-6">
            <Card 
              onClick={() => setActiveTab('impact')}
              className="min-w-[220px] w-[220px] p-0 rounded-[20px] bg-white border border-[#E2E8F0] shadow-sm overflow-hidden shrink-0 group cursor-pointer block"
