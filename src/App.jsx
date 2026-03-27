@@ -10,7 +10,7 @@ import { RightSidebar } from "./components/layout/RightSidebar";
 import { Globe, Clock, HelpCircle } from "lucide-react";
 
 const App = () => {
-  const [activeTab, setActiveTab ] = useState("impact"); // Set default to impact to see recipes
+  const [activeTab, setActiveTab ] = useState("home"); // Set default to home to see dashboard
 
   const renderScreen = () => {
     switch (activeTab) {
