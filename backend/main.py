@@ -1,8 +1,17 @@
-from fastapi import FastAPI, UploadFile, File, HTTPHeader
-from fastapi.middleware.cors import CORSMiddleware
 import os
-from typing import List, Dict
+import base64
 import json
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Setup Gemini 3 Flash / 1.5 Flash in 2026
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 app = FastAPI(title="Eco-Scan AI Bridge")
 
@@ -13,35 +22,46 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-GEMINI_SYSTEM_PROMPT = """
-You are the Eco-Scan Zero-Waste Chef. 
-Analyze the provided food image and return a structured JSON response.
-Identify the item, suggest a category (GRAINS, PROTEIN, DAIRY, VEGETABLES, FRUITS, OTHER), 
-estimate a weight in kg, and provide 3 local Zimbabwean-themed zero-waste recipes.
+class ScanResponse(BaseModel):
+    item_name: str
+    category: str
+    estimated_expiry: str
+    confidence_score: float
+    carbon_impact_factor: float
 
-Return ONLY this JSON format:
-{
-  "item_name": "string",
-  "category": "string",
-  "estimated_weight_kg": float,
-  "estimated_expiry": "YYYY-MM-DD",
-  "recipes": ["string", "string", "string"]
-}
-"""
+@app.post("/scan", response_model=ScanResponse)
+async def scan_food_item(file: UploadFile = File(...)):
+    try:
+        # 1. Read and encode the image
+        image_data = await file.read()
+        
+        # 2. Define the Vision Prompt for Gemini
+        prompt = """
+        Analyze this food item image. 
+        1. Identify the specific product name (e.g., 'Maize Meal', 'Covo', 'Greek Yogurt').
+        2. Categorize it (e.g., 'Grains', 'Vegetables', 'Dairy').
+        3. Estimate a conservative expiry date in YYYY-MM-DD format if not visible.
+        4. Provide a carbon impact factor (kg CO2e per kg).
+        
+        Return ONLY a JSON object with keys: 
+        "item_name", "category", "estimated_expiry", "confidence_score", "carbon_impact_factor"
+        """
 
-@app.post("/scan")
-async def scan_item(file: UploadFile = File(...)):
-    # Placeholder for Gemini 2.0 Flash integration
-    # In a real scenario, we would use the google-generativeai SDK here
-    
-    # Mock response for the hardcoded image verification
-    return {
-        "item_name": "Covo (Leafy Greens)",
-        "category": "VEGETABLES",
-        "estimated_weight_kg": 0.5,
-        "estimated_expiry": "2026-04-03",
-        "recipes": ["Covo Stew with Peanut Butter", "Sautéed Covo with Tomatoes", "Dried Covo (Mufushwa)"]
-    }
+        # 3. Call Gemini
+        response = model.generate_content([
+            prompt,
+            {"mime_type": "image/jpeg", "data": image_data}
+        ])
+        
+        # 4. Clean and parse the response
+        text_response = response.text.replace('```json', '').replace('```', '').strip()
+        result = json.loads(text_response)
+        
+        return result
+
+    except Exception as e:
+        print(f"Error in /scan: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
