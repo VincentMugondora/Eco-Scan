@@ -15,7 +15,7 @@ const App = () => {
   const renderScreen = () => {
     switch (activeTab) {
       case "home":
-        return <Dashboard />;
+        return <Dashboard setActiveTab={setActiveTab} />;
       case "pantry":
         return <Pantry />;
       case "scan":

@@ -6,7 +6,7 @@ import { ProgressBar } from "../ui/ProgressBar";
 import { IMPACT_STATS, PANTRY_ITEMS, ACTION_REQUIRED_ITEMS } from "../../data/mockData";
 import { motion } from "framer-motion";
 
-const Dashboard = () => {
+const Dashboard = ({ setActiveTab }) => {
   const urgentItems = [...PANTRY_ITEMS].filter(item => item.status === "expired" || item.status === "soon").slice(0, 3);
 
   return (
@@ -93,7 +93,10 @@ const Dashboard = () => {
                  <span className="text-[11px] font-bold text-[#D1EBE3]">Water: {IMPACT_STATS.waterSaved}L</span>
               </div>
            </div>
-           <button className="text-[11px] font-bold text-white hover:text-[#A7F3D0] transition-colors flex items-center gap-1 uppercase tracking-widest">
+           <button 
+             onClick={() => setActiveTab('impact')}
+             className="text-[11px] font-bold text-white hover:text-[#A7F3D0] transition-colors flex items-center gap-1 uppercase tracking-widest"
+           >
               Details <ChevronRight className="w-3 h-3" strokeWidth={3} />
            </button>
         </div>
@@ -102,12 +105,16 @@ const Dashboard = () => {
       {/* Quick Access Grid exactly as dash1.png */}
       <div className="grid grid-cols-4 gap-3 mb-8">
         {[
-          { id: "add", icon: Plus, label: "Add", bg: "bg-white", border: "border-[#E2E8F0]", color: "text-[#0F172A]", iconBg: "bg-[#F8FAFC]", iconColor: "text-[#64748B]" },
+          { id: "scan", icon: Plus, label: "Add", bg: "bg-white", border: "border-[#E2E8F0]", color: "text-[#0F172A]", iconBg: "bg-[#F8FAFC]", iconColor: "text-[#64748B]" },
           { id: "scan", icon: ScanLine, label: "Scan Item", bg: "bg-[#107050]", border: "border-[#107050]", color: "text-white", iconBg: "bg-white/20", iconColor: "text-white" },
-          { id: "recipe", icon: Utensils, label: "Recipes", bg: "bg-white", border: "border-[#E2E8F0]", color: "text-[#0F172A]", iconBg: "bg-[#FFF7ED]", iconColor: "text-[#F59E0B]" },
+          { id: "impact", icon: Utensils, label: "Recipes", bg: "bg-white", border: "border-[#E2E8F0]", color: "text-[#0F172A]", iconBg: "bg-[#FFF7ED]", iconColor: "text-[#F59E0B]" },
           { id: "pantry", icon: Grid, label: "Pantry", bg: "bg-white", border: "border-[#E2E8F0]", color: "text-[#0F172A]", iconBg: "bg-[#F3FAF7]", iconColor: "text-[#107050]" },
         ].map((item) => (
-          <button key={item.id} className={`${item.bg} border ${item.border} rounded-[20px] p-3 shadow-sm hover:shadow-md transition-shadow flex flex-col items-center justify-center gap-2 aspect-square group`}>
+          <button 
+            key={item.label} 
+            onClick={() => setActiveTab(item.id)}
+            className={`${item.bg} border ${item.border} rounded-[20px] p-3 shadow-sm hover:shadow-md transition-shadow flex flex-col items-center justify-center gap-2 aspect-square group`}
+          >
              <div className={`w-12 h-12 rounded-full ${item.iconBg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
                <item.icon className={`w-5 h-5 ${item.iconColor}`} strokeWidth={2.5} />
              </div>
@@ -120,7 +127,12 @@ const Dashboard = () => {
       <div>
         <div className="flex justify-between items-center mb-4 px-1">
           <h3 className="font-black text-[18px] text-[#0F172A] tracking-tight">Expiring Soon</h3>
-          <button className="text-[12px] font-bold text-[#107050] hover:underline">See all</button>
+          <button 
+            onClick={() => setActiveTab('pantry')}
+            className="text-[12px] font-bold text-[#107050] hover:underline"
+          >
+            See all
+          </button>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -157,7 +169,10 @@ const Dashboard = () => {
         </h3>
         
         <div className="flex gap-4 overflow-x-auto no-scrollbar pb-6 px-1">
-           <Card className="min-w-[220px] w-[220px] p-0 rounded-[20px] bg-white border border-[#E2E8F0] shadow-sm overflow-hidden shrink-0 group cursor-pointer block">
+           <Card 
+             onClick={() => setActiveTab('impact')}
+             className="min-w-[220px] w-[220px] p-0 rounded-[20px] bg-white border border-[#E2E8F0] shadow-sm overflow-hidden shrink-0 group cursor-pointer block"
+           >
               <div className="h-32 relative">
                 <img src="https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80" alt="Recipe" className="w-full h-full object-cover" />
                 <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[#0F172A] text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
@@ -174,7 +189,10 @@ const Dashboard = () => {
               </div>
            </Card>
 
-           <Card className="min-w-[220px] w-[220px] p-0 rounded-[20px] bg-white border border-[#E2E8F0] shadow-sm overflow-hidden shrink-0 group cursor-pointer block">
+           <Card 
+             onClick={() => setActiveTab('impact')}
+             className="min-w-[220px] w-[220px] p-0 rounded-[20px] bg-white border border-[#E2E8F0] shadow-sm overflow-hidden shrink-0 group cursor-pointer block"
+           >
               <div className="h-32 relative">
                 <img src="https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&q=80" alt="Recipe" className="w-full h-full object-cover" />
                 <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[#0F172A] text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
