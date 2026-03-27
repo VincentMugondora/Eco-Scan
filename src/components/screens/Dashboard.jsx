@@ -6,6 +6,18 @@ import { ProgressBar } from "../ui/ProgressBar";
 import { IMPACT_STATS, PANTRY_ITEMS, ACTION_REQUIRED_ITEMS } from "../../data/mockData";
 import { motion } from "framer-motion";
 
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+
+const chartData = [
+  { day: 'Mon', co2: 1.2 },
+  { day: 'Tue', co2: 2.1 },
+  { day: 'Wed', co2: 1.8 },
+  { day: 'Thu', co2: 3.4 },
+  { day: 'Fri', co2: 2.8 },
+  { day: 'Sat', co2: 4.1 },
+  { day: 'Sun', co2: 12.4 },
+];
+
 const Dashboard = ({ setActiveTab }) => {
   const urgentItems = [...PANTRY_ITEMS].filter(item => item.status === "expired" || item.status === "soon").slice(0, 3);
 
@@ -38,13 +50,13 @@ const Dashboard = ({ setActiveTab }) => {
         </div>
       </div>
 
-      {/* Hero Eco-Score Card */}
-      <Card className="p-0 bg-[#107050] border-none shadow-[0_20px_40px_-15px_rgba(16,112,80,0.5)] rounded-[24px] lg:rounded-[32px] relative overflow-hidden mb-8 text-white">
+      {/* Hero Eco-Score Card with Recharts */}
+      <Card className="p-0 bg-[#107050] border-none shadow-[0_20px_40px_-15px_rgba(16,112,80,0.5)] rounded-[24px] lg:rounded-[32px] relative overflow-hidden mb-8 text-white min-h-[340px] lg:min-h-[300px]">
         {/* Soft decorative blur */}
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-white opacity-10 rounded-full blur-[60px]"></div>
         <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-[#065A3F] opacity-50 rounded-full blur-[40px]"></div>
 
-        <div className="p-6 lg:p-8 relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="p-6 lg:p-8 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
            <div className="flex-1">
              <div className="flex items-center gap-2 mb-3">
                <Sparkles className="w-4 h-4 text-[#A7F3D0]" />
@@ -56,49 +68,60 @@ const Dashboard = ({ setActiveTab }) => {
              <p className="text-[13px] text-[#A7F3D0] max-w-[200px] leading-relaxed font-medium">
                You are in the top <span className="text-white font-bold">15%</span> of eco-savers in your community this week!
              </p>
+             
+             <button 
+              onClick={() => setActiveTab('impact')}
+              className="mt-6 bg-white/10 hover:bg-white/20 backdrop-blur-md px-5 py-2.5 rounded-xl text-[12px] font-black transition-all flex items-center gap-2 group w-fit"
+            >
+               View Details <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" strokeWidth={3} />
+            </button>
            </div>
            
-           {/* Circular Gauge */}
-           <div className="relative w-28 h-28 shrink-0 self-center md:self-auto">
-             <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full drop-shadow-lg">
-               <circle cx="50" cy="50" r="44" fill="transparent" stroke="rgba(255,255,255,0.15)" strokeWidth="12" />
-               <circle 
-                 cx="50" 
-                 cy="50" 
-                 r="44" 
-                 fill="transparent" 
-                 stroke="#A7F3D0" 
-                 strokeWidth="12" 
-                 strokeDasharray="276" 
-                 strokeDashoffset={276 - (276 * 0.84)} 
-                 strokeLinecap="round" 
-               />
-             </svg>
-             <div className="absolute inset-0 flex flex-col items-center justify-center pt-1 drop-shadow-md">
-                <span className="text-[26px] font-black tracking-tighter">84</span>
-                <span className="text-[9px] font-bold text-[#D1EBE3] tracking-wider uppercase mt-0.5">SCORE</span>
-             </div>
+           {/* Chart Container */}
+           <div className="w-full h-[180px] lg:h-[200px] relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorCo2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#A7F3D0" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#A7F3D0" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0F172A', border: 'none', borderRadius: '12px', color: '#fff' }}
+                    itemStyle={{ color: '#10B981', fontWeight: 'bold' }}
+                    labelStyle={{ color: '#94A3B8', fontSize: '10px' }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="co2" 
+                    stroke="#A7F3D0" 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#colorCo2)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
            </div>
         </div>
         
         {/* Subtle bottom info bar */}
-        <div className="bg-[#0A4A35]/40 backdrop-blur-md px-6 py-3 flex justify-between items-center z-10 relative border-t border-white/5">
-           <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                 <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
+        <div className="bg-[#0A4A35]/40 backdrop-blur-md px-6 py-4 flex justify-between items-center z-10 relative border-t border-white/5">
+           <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                 <span className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                  <span className="text-[11px] font-bold text-[#D1EBE3]">Meals Saved: {IMPACT_STATS.mealsSaved}</span>
               </div>
-              <div className="hidden sm:flex items-center gap-1.5">
-                 <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"></span>
+              <div className="hidden sm:flex items-center gap-2">
+                 <span className="w-2 h-2 rounded-full bg-[#3B82F6] shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
                  <span className="text-[11px] font-bold text-[#D1EBE3]">Water: {IMPACT_STATS.waterSaved}L</span>
               </div>
            </div>
-           <button 
-             onClick={() => setActiveTab('impact')}
-             className="text-[11px] font-bold text-white hover:text-[#A7F3D0] transition-colors flex items-center gap-1 uppercase tracking-widest"
-           >
-              Details <ChevronRight className="w-3 h-3" strokeWidth={3} />
-           </button>
+           <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-black text-[14px]">
+                 Lv. 4
+              </div>
+           </div>
         </div>
       </Card>
 
