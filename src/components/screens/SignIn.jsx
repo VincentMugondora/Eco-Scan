@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, ChevronLeft, Github } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ChevronLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
 const SignIn = ({ onSignIn, onNavigateToSignUp }) => {
