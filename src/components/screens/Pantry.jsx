@@ -1,15 +1,14 @@
-import React, { useState } from "react";
-import { Search, Filter, Scan, Target, Check, MoreVertical, Clock, ChefHat, AlertCircle, ArrowRight } from "lucide-react";
-import { Card } from "../ui/Card";
-import { Badge } from "../ui/Badge";
-import { ProgressBar } from "../ui/ProgressBar";
-import { Button } from "../ui/Button";
-import { PANTRY_ITEMS, ACTION_REQUIRED_ITEMS } from "../../data/mockData";
-import { motion, AnimatePresence } from "framer-motion";
+import { usePantry } from "../../hooks/usePantry";
 
 const Pantry = () => {
+  const { items, loading, markAsCooked } = usePantry();
   const [filter, setFilter] = useState("all");
-  const [selectedItems, setSelectedItems] = useState([1, 3]); // Matches Mealie-meal and Oat Milk from the screenshot
+  const [selectedItems, setSelectedItems] = useState([]);
+
+  const urgentItems = items.filter(item => {
+    const days = Math.floor((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    return days <= 2 && !item.is_cooked;
+  });
 
   const toggleItem = (id) => {
     setSelectedItems(prev => 
@@ -18,12 +17,20 @@ const Pantry = () => {
   };
 
   const toggleAll = () => {
-    if (selectedItems.length === PANTRY_ITEMS.length) {
+    if (selectedItems.length === items.length) {
       setSelectedItems([]);
     } else {
-      setSelectedItems(PANTRY_ITEMS.map(i => i.id));
+      setSelectedItems(items.map(i => i.id));
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 pb-32 lg:pt-10 lg:px-6">
@@ -147,11 +154,11 @@ const Pantry = () => {
         </div>
 
         <div className="flex flex-col gap-3">
-          {ACTION_REQUIRED_ITEMS.map((item) => (
+          {urgentItems.map((item) => (
              <Card key={item.id} className="p-3 lg:px-4 lg:py-3 flex items-center justify-between border-[#E2E8F0] shadow-sm bg-white rounded-2xl">
                 <div className="flex items-center gap-4">
                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#F1F5F9]">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover mix-blend-multiply opacity-90" />
+                      <img src={item.image_url} alt={item.name} className="w-full h-full object-cover mix-blend-multiply opacity-90" />
                    </div>
                    <div>
                       <h4 className="font-bold text-[14px] text-[#0F172A]">{item.name}</h4>
@@ -159,7 +166,9 @@ const Pantry = () => {
                    </div>
                 </div>
                 <div className="flex items-center gap-6">
-                   <Badge className="bg-[#FEF2F2] text-[#EF4444] border-none font-bold text-[11px] px-3">{item.timeLeft}</Badge>
+                   <Badge className="bg-[#FEF2F2] text-[#EF4444] border-none font-bold text-[11px] px-3">
+                    {Math.floor((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}d left
+                   </Badge>
                    <button className="text-[#94A3B8] hover:text-[#0F172A]">
                       <MoreVertical className="w-4 h-4" />
                    </button>
@@ -173,7 +182,7 @@ const Pantry = () => {
       <div className="px-4 lg:px-2 lg:mt-6">
         <div className="flex justify-between items-center mb-4 lg:mb-5">
           <h3 className="text-[10px] lg:text-[16px] lg:capitalize lg:font-black lg:tracking-normal font-black uppercase tracking-widest text-[#0F172A] flex items-center gap-3">
-             <span className="lg:hidden text-[#64748B]">All Items ({PANTRY_ITEMS.length})</span>
+             <span className="lg:hidden text-[#64748B]">All Items ({items.length})</span>
              <span className="hidden lg:inline">Inventory Summary</span>
           </h3>
           <div className="text-primary text-[10px] lg:text-[12px] font-bold lg:font-bold lg:tracking-normal lg:text-[#64748B] uppercase tracking-widest flex items-center gap-1.5 cursor-pointer">
@@ -182,7 +191,7 @@ const Pantry = () => {
         </div>
 
         <div className="flex flex-col gap-3 lg:gap-3">
-          {PANTRY_ITEMS.map((item) => {
+          {items.map((item) => {
             const isSelected = selectedItems.includes(item.id);
             
             return (
@@ -218,7 +227,7 @@ const Pantry = () => {
 
                 {/* Common Image */}
                 <div className="w-12 h-12 lg:w-[48px] lg:h-[48px] rounded-[16px] overflow-hidden shrink-0 bg-[#F1F5F9] border border-[#E2E8F0]">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover mix-blend-multiply opacity-90" />
+                  <img src={item.image_url} alt={item.name} className="w-full h-full object-cover mix-blend-multiply opacity-90" />
                 </div>
 
                 {/* Item Details */}
@@ -232,8 +241,8 @@ const Pantry = () => {
                     </div>
                     <p className="text-[10px] text-text-secondary lg:hidden">{item.category}</p>
                     <div className="hidden lg:flex items-center gap-3 text-[11px] text-[#94A3B8] font-black">
-                       <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5" /><path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2z" /><path d="M6 12v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3" /></svg> {item.weight}</span>
-                       <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" strokeWidth={2.5} /> {item.updatedAt}</span>
+                       <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5" /><path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2z" /><path d="M6 12v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3" /></svg> {item.weight_kg}kg</span>
+                       <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" strokeWidth={2.5} /> Live</span>
                     </div>
                   </div>
 
@@ -246,18 +255,18 @@ const Pantry = () => {
                           "text-[10px] font-black whitespace-nowrap",
                           item.status === 'expired' ? "text-[#EF4444]" : "text-[#107050]"
                         )}>
-                          {item.daysLeft}
+                          {Math.floor((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}d left
                         </span>
                      </div>
 
                      {/* Freshness Bar */}
                      <div className="flex items-center gap-4 w-[140px]">
                         <ProgressBar 
-                          value={item.freshness || 10} 
+                          value={item.freshness_percentage || 10} 
                           variant={item.status === 'expired' ? 'danger' : 'primary'} 
                           className="h-[4px] bg-[#E2E8F0] flex-1" 
                         />
-                        <span className="font-black text-[10px] text-[#94A3B8] w-[50px] text-right">{item.freshness || 10}% fresh</span>
+                        <span className="font-black text-[10px] text-[#94A3B8] w-[50px] text-right">{item.freshness_percentage || 10}% fresh</span>
                      </div>
                   </div>
 
