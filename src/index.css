@@ -1,18 +1,37 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #067A57;
+  /* Brand Colors - High Fidelity 2026 Hackathon Palette */
+  --color-primary: #107050;
+  --color-primary-dark: #065A3F;
   --color-primary-light: #E6F4F0;
-  --color-danger: #FF4D4D;
-  --color-warning: #FFA500;
-  --color-neutral-bg: #F8F9FA;
-  --color-text-primary: #1A202C;
-  --color-text-secondary: #4A5568;
+  --color-accent: #10B981;
+  --color-accent-soft: #A7F3D0;
   
+  /* Status Colors */
+  --color-urgent: #EF4444;
+  --color-urgent-soft: #FEF2F2;
+  --color-warning: #F59E0B;
+  --color-warning-soft: #FFFBEB;
+  
+  /* Base Colors */
+  --color-neutral-bg: #F8F9FA;
+  --color-surface: #FFFFFF;
+  --color-border-soft: #E2E8F0;
+  
+  /* Text Colors */
+  --color-text-main: #0F172A;
+  --color-text-muted: #64748B;
+  --color-text-placeholder: #94A3B8;
+  
+  /* Radius Tokens */
+  --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
   --radius-3xl: 2rem;
+  --radius-4xl: 2.5rem;
   
-  --font-sans: "Inter", system-ui, sans-serif;
+  /* Font Family */
+  --font-sans: "Inter", "Outfit", system-ui, sans-serif;
 }
 
 @layer base {
