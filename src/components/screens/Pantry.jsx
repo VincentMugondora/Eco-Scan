@@ -1,3 +1,10 @@
+import React, { useState } from "react";
+import { Search, Filter, AlertCircle, Clock, MoreVertical, Check, ArrowRight, ChefHat } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card } from "../ui/Card";
+import { Badge } from "../ui/Badge";
+import { Button } from "../ui/Button";
+import { ProgressBar } from "../ui/ProgressBar";
 import { usePantry } from "../../hooks/usePantry";
 
 const Pantry = () => {

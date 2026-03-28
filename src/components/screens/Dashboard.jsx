@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Bell, Grid, Plus, ScanLine, Utensils, Sparkles, ChevronRight, CheckCircle2 } from "lucide-react";
 import { Card } from "../ui/Card";
 import { Badge } from "../ui/Badge";
@@ -138,7 +138,7 @@ const Dashboard = ({ setActiveTab }) => {
            </div>
            
            <div className="w-full h-80 min-h-[320px] relative">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="99%" height="100%">
                 <AreaChart data={dynamicChartData}>
                   <defs>
                     <linearGradient id="colorCo2" x1="0" y1="0" x2="0" y2="1">
