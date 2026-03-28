@@ -83,7 +83,7 @@ const Scanner = ({ onScanComplete }) => {
       setScanResult(data);
     } catch (err) {
       console.error("Scan error:", err);
-      // Fallback for demo
+      // Fallback for demo in case of backend or table failure
       setScanResult({
         item_name: "Covo (Leafy Greens)",
         category: "VEGETABLES",
