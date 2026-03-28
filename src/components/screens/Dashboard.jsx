@@ -138,7 +138,7 @@ const Dashboard = ({ setActiveTab }) => {
            </div>
            
            <div className="w-full h-80 min-h-[320px] relative">
-              <ResponsiveContainer width="99%" height="100%">
+              <ResponsiveContainer minWidth={0} width="99%" height="100%">
                 <AreaChart data={dynamicChartData}>
                   <defs>
                     <linearGradient id="colorCo2" x1="0" y1="0" x2="0" y2="1">

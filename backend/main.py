@@ -52,16 +52,20 @@ async def scan_food_item(file: UploadFile = File(...)):
         image_data = await file.read()
         
         # 2. Define the Vision Prompt for Gemini
-        prompt = """
-        Analyze this food item image. 
-        1. Identify the specific product name (e.g., 'Maize Meal', 'Covo', 'Greek Yogurt').
-        2. Categorize it (e.g., 'Grains', 'Vegetables', 'Dairy').
-        3. Estimate a conservative expiry date in YYYY-MM-DD format if not visible.
-        4. Provide a carbon impact factor (kg CO2e per kg).
-        
-        Return ONLY a JSON object with keys: 
-        "item_name", "category", "estimated_expiry", "confidence_score", "carbon_impact_factor"
-        """
+        prompt = """You are a food identification AI for an eco-scan app. 
+Analyze this food item image precisely.
+
+RULES:
+- Return ONLY a single valid JSON object. No markdown, no explanation.
+- Use these EXACT keys: "item_name", "category", "estimated_expiry", "confidence_score", "carbon_impact_factor"
+- item_name: specific product name (e.g. "Maize Meal 2kg", "Covo", "Full Cream Milk")
+- category: one of VEGETABLES, FRUITS, DAIRY, GRAINS, MEAT, LEGUMES, BEVERAGES, SNACKS, OTHER
+- estimated_expiry: YYYY-MM-DD format, today is 2026-03-28, be conservative
+- confidence_score: 0.0 to 1.0 float
+- carbon_impact_factor: kg CO2e per kg of product (e.g. beef=27.0, dairy=3.2, vegetables=0.5)
+
+Example output:
+{"item_name": "Covo (Leafy Greens)", "category": "VEGETABLES", "estimated_expiry": "2026-04-04", "confidence_score": 0.95, "carbon_impact_factor": 0.5}"""
 
         # 3. Call Gemini
         print(f"Calling Gemini for file: {file.filename}")
