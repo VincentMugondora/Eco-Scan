@@ -187,7 +187,7 @@ def _call_gemini_vision(prompt: str, image_bytes: bytes, mime_type: str) -> str:
         )
         return response.text
     except ClientError as e:
-        if e.status_code == 429:
+        if e.code == 429:
             retry_after = _parse_retry_delay(str(e))
             log.warning("Gemini 429 — rate limited. Retry after %.1fs", retry_after)
             raise HTTPException(
@@ -216,7 +216,7 @@ def _call_gemini_text(prompt: str) -> str:
         )
         return response.text
     except ClientError as e:
-        if e.status_code == 429:
+        if e.code == 429:
             retry_after = _parse_retry_delay(str(e))
             log.warning("Gemini 429 — rate limited (text). Retry after %.1fs", retry_after)
             raise HTTPException(
