@@ -92,9 +92,19 @@ class ScanResponse(BaseModel):
     analysis_reasoning: str
 
 
+class RecipeIngredient(BaseModel):
+    name: str
+    amount: str
+
+class RecipeDetail(BaseModel):
+    name: str
+    time_to_cook_minutes: int
+    difficulty: str
+    ingredients: list[RecipeIngredient]
+
 class RecipeResponse(BaseModel):
     item_name: str
-    recipes: list[str]
+    recipes: list[RecipeDetail]
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -322,22 +332,43 @@ async def generate_recipes(item_name: str):
     try:
         prompt = f"""
         You are the Eco-Scan Zero-Waste Chef. 
-        For the food item '{item_name}', suggest 3 creative, zero-waste, and local Zimbabwean-themed recipes.
+        For the food item '{item_name}', suggest 2 creative, zero-waste, and local Zimbabwean-themed recipes.
         Focus on using the item fully (including peels or stalks if applicable) and common local ingredients.
         
-        Return ONLY a JSON array of strings.
+        Return ONLY a JSON array of recipe objects. Exact schema for the array items:
+        {{
+            "name": "string",
+            "time_to_cook_minutes": integer,
+            "difficulty": "Beginner" | "Medium" | "Expert",
+            "ingredients": [
+                {{ "name": "string", "amount": "string" }}
+            ]
+        }}
         """
         raw = _call_gemini_text(prompt)
-        recipes = json.loads(clean_json(raw))
-        return {"item_name": item_name, "recipes": recipes}
+        recipes_list = json.loads(clean_json(raw))
+        
+        # If Gemini returned {"recipes": [...]}, extract the list
+        if isinstance(recipes_list, dict) and "recipes" in recipes_list:
+            recipes_list = recipes_list["recipes"]
+            
+        return {"item_name": item_name, "recipes": recipes_list}
     except Exception as e:
         log.warning("Recipe AI error: %s", e)
+        # Fallback 
         return {
             "item_name": item_name,
             "recipes": [
-                f"{item_name} Relish with Peanut Butter",
-                f"Dried {item_name} (Mufushwa)",
-                f"Sautéed {item_name} with Onions",
+                {
+                    "name": f"{item_name} Relish with Peanut Butter",
+                    "time_to_cook_minutes": 20,
+                    "difficulty": "Beginner",
+                    "ingredients": [
+                        {"name": item_name, "amount": "1 portion"},
+                        {"name": "Peanut Butter", "amount": "2 tbsp"},
+                        {"name": "Onion", "amount": "1 small"}
+                    ]
+                }
             ],
         }
 

@@ -3,7 +3,7 @@ import { Search, Bell, Grid, Plus, ScanLine, Utensils, Sparkles, ChevronRight, C
 import { Card } from "../ui/Card";
 import { Badge } from "../ui/Badge";
 import { ProgressBar } from "../ui/ProgressBar";
-import { IMPACT_STATS, PANTRY_ITEMS, ACTION_REQUIRED_ITEMS } from "../../data/mockData";
+
 import { motion } from "framer-motion";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
@@ -32,6 +32,10 @@ const Dashboard = ({ setActiveTab }) => {
   const [userEmail, setUserEmail] = useState("");
   const [greeting, setGreeting] = useState("Hello,");
   const [userLoading, setUserLoading] = useState(true);
+
+  // New states for dynamic recipes
+  const [suggestedRecipes, setSuggestedRecipes] = useState(null);
+  const [recipesLoading, setRecipesLoading] = useState(false);
 
   React.useEffect(() => {
     const fetchUser = async () => {
@@ -68,6 +72,36 @@ const Dashboard = ({ setActiveTab }) => {
   const urgentItems = items.filter(item => 
     item.status === 'warning' && !item.is_cooked
   ).slice(0, 5); // Show more urgent items if available
+
+  // Fetch dynamic recipes when urgent items are available
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      if (urgentItems.length === 0 || suggestedRecipes || recipesLoading) return;
+      
+      try {
+        setRecipesLoading(true);
+        const itemToUse = urgentItems[0].item_name; // Base recipe on most urgent item
+        
+        // Ensure you use full URL depending on your setup. React Vite typically proxies /recipes or you provide exact URL
+        const res = await fetch(`http://127.0.0.1:8000/recipes?item_name=${encodeURIComponent(itemToUse)}`, {
+          method: 'POST'
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          setSuggestedRecipes(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch recipes:", err);
+      } finally {
+        setRecipesLoading(false);
+      }
+    };
+    
+    if (urgentItems.length > 0) {
+      fetchRecipes();
+    }
+  }, [urgentItems, suggestedRecipes, recipesLoading]);
 
   // Generate dynamic chart data based on items added per day (simplified for demo)
   const dynamicChartData = [
@@ -253,45 +287,43 @@ const Dashboard = ({ setActiveTab }) => {
         </h3>
         
         <div className="flex gap-4 overflow-x-auto no-scrollbar pb-6">
-           <Card 
-             onClick={() => setActiveTab('impact')}
-             className="min-w-[220px] w-[220px] p-0 rounded-[20px] bg-white border border-[#E2E8F0] shadow-sm overflow-hidden shrink-0 group cursor-pointer block"
-           >
-              <div className="h-32 relative">
-                <img src="https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80" alt="Recipe" className="w-full h-full object-cover" />
-                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[#0F172A] text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                   <CheckCircle2 className="w-3 h-3 text-[#10B981]" /> 100% Match
-                </div>
-              </div>
-              <div className="p-4">
-                 <h4 className="font-bold text-[14px] text-[#0F172A] mb-1 leading-tight group-hover:text-[#107050] transition-colors">Sadza & Leafy Greens</h4>
-                 <p className="text-[12px] text-[#64748B] font-medium flex items-center gap-4">
-                    <span>20 min</span>
-                    <span className="w-1 h-1 rounded-full bg-[#CBD5E1]"></span>
-                    <span>Beginner</span>
-                 </p>
-              </div>
-           </Card>
-
-           <Card 
-             onClick={() => setActiveTab('impact')}
-             className="min-w-[220px] w-[220px] p-0 rounded-[20px] bg-white border border-[#E2E8F0] shadow-sm overflow-hidden shrink-0 group cursor-pointer block"
-           >
-              <div className="h-32 relative">
-                <img src="https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&q=80" alt="Recipe" className="w-full h-full object-cover" />
-                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[#0F172A] text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                   <CheckCircle2 className="w-3 h-3 text-[#10B981]" /> 80% Match
-                </div>
-              </div>
-              <div className="p-4">
-                 <h4 className="font-bold text-[14px] text-[#0F172A] mb-1 leading-tight group-hover:text-[#107050] transition-colors">Hearty Kale Stew</h4>
-                 <p className="text-[12px] text-[#64748B] font-medium flex items-center gap-4">
-                    <span>35 min</span>
-                    <span className="w-1 h-1 rounded-full bg-[#CBD5E1]"></span>
-                    <span>Medium</span>
-                 </p>
-              </div>
-           </Card>
+           {recipesLoading ? (
+             <div className="flex gap-4">
+                {[1, 2].map(i => (
+                  <div key={i} className="min-w-[220px] w-[220px] h-[220px] rounded-[20px] bg-white border border-[#E2E8F0] shadow-sm animate-pulse flex flex-col justify-between p-4">
+                    <div className="w-full h-24 bg-slate-200 rounded-lg"></div>
+                    <div className="w-3/4 h-4 bg-slate-200 rounded mt-4"></div>
+                    <div className="w-1/2 h-4 bg-slate-200 rounded mt-2"></div>
+                  </div>
+                ))}
+             </div>
+           ) : suggestedRecipes && suggestedRecipes.recipes ? (
+             suggestedRecipes.recipes.map((recipe, idx) => (
+                <Card 
+                  key={idx}
+                  onClick={() => setActiveTab('impact')} // Or a recipes tab
+                  className="min-w-[220px] w-[220px] p-0 rounded-[20px] bg-white border border-[#E2E8F0] shadow-sm overflow-hidden shrink-0 group cursor-pointer block flex flex-col h-full"
+                >
+                  <div className="h-32 relative bg-[#F1F5F9] flex items-center justify-center">
+                    {/* Placeholder image since backend doesn't provide one, using dicebear or generic food icon */}
+                    <Utensils className="w-10 h-10 text-[#CBD5E1]" />
+                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[#0F172A] text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-[#10B981]" /> AI Match
+                    </div>
+                  </div>
+                  <div className="p-4 flex flex-col flex-1 justify-between">
+                      <h4 className="font-bold text-[14px] text-[#0F172A] mb-1 leading-tight group-hover:text-[#107050] transition-colors line-clamp-2" title={recipe.name}>{recipe.name}</h4>
+                      <p className="text-[12px] text-[#64748B] font-medium flex items-center gap-4 mt-2">
+                        <span>{recipe.time_to_cook_minutes} min</span>
+                        <span className="w-1 h-1 rounded-full bg-[#CBD5E1]"></span>
+                        <span className="capitalize">{recipe.difficulty}</span>
+                      </p>
+                  </div>
+                </Card>
+             ))
+           ) : (
+             <p className="text-[13px] text-[#64748B] font-medium py-4">No suggestions right now. Add more items to your pantry!</p>
+           )}
         </div>
       </div>
     </div>
