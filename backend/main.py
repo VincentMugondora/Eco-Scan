@@ -40,6 +40,9 @@ class ScanResponse(BaseModel):
     confidence_score: float
     carbon_impact_factor: float
     co2e_saved: float
+    is_expired: bool
+    freshness_grade: int   # 1 (almost gone) to 10 (perfectly fresh)
+    analysis_reasoning: str  # e.g. "Visual bruising detected on skin"
 
 @app.post("/scan", response_model=ScanResponse)
 async def scan_food_item(file: UploadFile = File(...)):
@@ -52,20 +55,38 @@ async def scan_food_item(file: UploadFile = File(...)):
         image_data = await file.read()
         
         # 2. Define the Vision Prompt for Gemini
-        prompt = """You are a food identification AI for an eco-scan app. 
-Analyze this food item image precisely.
+        prompt = """You are a food safety AI for Eco-Scan. Perform TWO parallel checks on this image:
 
-RULES:
-- Return ONLY a single valid JSON object. No markdown, no explanation.
-- Use these EXACT keys: "item_name", "category", "estimated_expiry", "confidence_score", "carbon_impact_factor"
-- item_name: specific product name (e.g. "Maize Meal 2kg", "Covo", "Full Cream Milk")
-- category: one of VEGETABLES, FRUITS, DAIRY, GRAINS, MEAT, LEGUMES, BEVERAGES, SNACKS, OTHER
-- estimated_expiry: YYYY-MM-DD format, today is 2026-03-28, be conservative
-- confidence_score: 0.0 to 1.0 float
-- carbon_impact_factor: kg CO2e per kg of product (e.g. beef=27.0, dairy=3.2, vegetables=0.5)
+CHECK 1 — OCR Date Scan:
+- Search the packaging for any text matching: "Best Before", "BB", "EXP", "Use By", or date formats (DD/MM/YYYY, MM/YYYY, YYYY-MM-DD).
+- If a date is found, extract it as the authoritative expiry date.
 
-Example output:
-{"item_name": "Covo (Leafy Greens)", "category": "VEGETABLES", "estimated_expiry": "2026-04-04", "confidence_score": 0.95, "carbon_impact_factor": 0.5}"""
+CHECK 2 — Visual Freshness Grade:
+- Analyze the food itself (not packaging) for visual signs of decay:
+  * Signs of spoilage: mold (fuzzy/white patches), bruising (dark spots), wilting (limpness), fermentation (bubbling/swelling), discoloration.
+  * Grade the freshness 1-10 where: 10=perfect, 7-9=good, 4-6=use soon, 1-3=spoiled/dangerous.
+- Write a short analysis_reasoning explaining what you see (e.g. "Mild browning on banana peel; 80% of fruit appears firm").
+
+LOGIC:
+- If OCR date found AND it is before 2026-03-28: is_expired = true
+- If OCR date found AND it is on/after 2026-03-28: is_expired = false
+- If NO date found: set is_expired based on visual grade (grade <= 2 means is_expired = true)
+- estimated_expiry: use OCR date if found, else estimate from visual grade
+
+Return ONLY a single valid JSON object with EXACTLY these keys:
+{
+  "item_name": "specific product name",
+  "category": "one of: VEGETABLES, FRUITS, DAIRY, GRAINS, MEAT, LEGUMES, BEVERAGES, SNACKS, OTHER",
+  "estimated_expiry": "YYYY-MM-DD",
+  "confidence_score": 0.0-1.0,
+  "carbon_impact_factor": kg_CO2e_per_kg_float,
+  "is_expired": true_or_false,
+  "freshness_grade": 1_to_10_integer,
+  "analysis_reasoning": "short sentence explaining visual or OCR findings"
+}
+
+Example:
+{"item_name": "Banana", "category": "FRUITS", "estimated_expiry": "2026-04-02", "confidence_score": 0.92, "carbon_impact_factor": 0.7, "is_expired": false, "freshness_grade": 6, "analysis_reasoning": "Moderate brown spotting on peel; fruit still firm and safe to eat."}"""
 
         # 3. Call Gemini
         print(f"Calling Gemini for file: {file.filename}")
@@ -97,6 +118,21 @@ Example output:
         # 5. Map impact to 0.5kg default weight for CO2e calculation
         impact_factor = float(result_data.get("carbon_impact_factor", 2.5))
         co2e_saved = float(f"{(impact_factor * 0.5):.2f}")
+        
+        # 6. Derive is_expired if not already set in JSON
+        from datetime import date
+        today = date(2026, 3, 28)  # Use the app's reference date
+        expiry_str = result_data.get("estimated_expiry", "")
+        if "is_expired" not in result_data:
+            try:
+                expiry_date = date.fromisoformat(expiry_str)
+                result_data["is_expired"] = expiry_date < today
+            except Exception:
+                result_data["is_expired"] = False
+
+        # Defaults for new fields if Gemini omits them
+        result_data.setdefault("freshness_grade", 7)
+        result_data.setdefault("analysis_reasoning", "No visual defects detected.")
         
         # Ensure result_data is a dict we can update
         result = dict(result_data)

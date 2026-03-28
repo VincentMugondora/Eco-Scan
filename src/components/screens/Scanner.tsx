@@ -13,7 +13,10 @@ interface ScanResult {
   confidence_score: number;
   carbon_impact_factor: number;
   co2e_saved: number;
-  previewUrl?: string; // local object URL for the image preview
+  is_expired: boolean;
+  freshness_grade: number;      // 1-10
+  analysis_reasoning: string;
+  previewUrl?: string;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -103,6 +106,9 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
         confidence_score: 0.3,
         carbon_impact_factor: 1.0,
         co2e_saved: 0.5,
+        is_expired: false,
+        freshness_grade: 7,
+        analysis_reasoning: "Backend unreachable — using demo defaults.",
         previewUrl,
       };
     }
@@ -290,42 +296,95 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
 
             {/* Scrollable item list */}
             <div className="overflow-y-auto flex-1 px-4 py-3 flex flex-col gap-3">
-              {reviewQueue.map((item, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="flex items-center gap-3 bg-slate-50 rounded-2xl p-3 border border-slate-100"
-                >
-                  {/* Preview thumbnail */}
-                  <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-slate-200 flex items-center justify-center">
-                    {item.previewUrl
-                      ? <img src={item.previewUrl} alt={item.item_name} className="w-full h-full object-cover" />
-                      : <ImageIcon className="w-6 h-6 text-slate-400" />
-                    }
-                  </div>
+              {reviewQueue.map((item, idx) => {
+                const expired = item.is_expired;
+                const cookNow = !expired && item.freshness_grade < 4;
+                const cardBg = expired
+                  ? "bg-red-50 border-red-200"
+                  : cookNow
+                  ? "bg-amber-50 border-amber-200"
+                  : "bg-slate-50 border-slate-100";
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-black text-slate-900 text-sm truncate">{item.item_name}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS.OTHER}`}>
-                        {item.category}
-                      </span>
-                      <span className="text-[10px] text-amber-600 font-bold">Exp: {item.estimated_expiry}</span>
-                      <span className="text-[10px] text-[#107050] font-bold">{item.co2e_saved}kg CO₂e</span>
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className={`flex flex-col gap-2 rounded-2xl p-3 border ${cardBg}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Preview thumbnail */}
+                      <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-slate-200 flex items-center justify-center relative">
+                        {item.previewUrl
+                          ? <img src={item.previewUrl} alt={item.item_name} className="w-full h-full object-cover" />
+                          : <ImageIcon className="w-6 h-6 text-slate-400" />
+                        }
+                        {expired && (
+                          <div className="absolute inset-0 bg-red-500/60 flex items-center justify-center">
+                            <span className="text-white text-lg">⚠️</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className={`font-black text-sm truncate ${expired ? "text-red-700" : "text-slate-900"}`}>{item.item_name}</p>
+                          {expired && <span className="text-[9px] font-black bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full shrink-0">EXPIRED</span>}
+                          {cookNow && <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full shrink-0">USE SOON</span>}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS.OTHER}`}>
+                            {item.category}
+                          </span>
+                          <span className={`text-[10px] font-bold ${expired ? "text-red-600" : "text-amber-600"}`}>Exp: {item.estimated_expiry}</span>
+                        </div>
+
+                        {/* Freshness grade bar */}
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-[9px] font-black text-slate-400 w-14">Freshness</span>
+                          <div className="flex-1 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                item.freshness_grade >= 7 ? "bg-emerald-500"
+                                : item.freshness_grade >= 4 ? "bg-amber-400"
+                                : "bg-red-500"
+                              }`}
+                              style={{ width: `${(item.freshness_grade / 10) * 100}%` }}
+                            />
+                          </div>
+                          <span className={`text-[10px] font-black w-4 ${
+                            item.freshness_grade >= 7 ? "text-emerald-600"
+                            : item.freshness_grade >= 4 ? "text-amber-600"
+                            : "text-red-600"
+                          }`}>{item.freshness_grade}</span>
+                        </div>
+                      </div>
+
+                      {/* Remove */}
+                      <button onClick={() => removeFromQueue(idx)} className="text-slate-300 hover:text-red-500 transition-colors shrink-0">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                  </div>
 
-                  {/* Confidence + Remove */}
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <span className="text-[10px] font-black text-slate-400">{Math.round(item.confidence_score * 100)}%</span>
-                    <button onClick={() => removeFromQueue(idx)} className="text-slate-300 hover:text-red-500 transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+                    {/* Analysis Reasoning */}
+                    {item.analysis_reasoning && (
+                      <p className={`text-[11px] font-medium leading-snug px-1 ${
+                        expired ? "text-red-600" : cookNow ? "text-amber-700" : "text-slate-500"
+                      }`}>
+                        🔍 {item.analysis_reasoning}
+                      </p>
+                    )}
+
+                    {/* Cook Now CTA */}
+                    {cookNow && (
+                      <button className="w-full text-[11px] font-black text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-xl py-2 transition-colors flex items-center justify-center gap-1.5">
+                        🍳 Cook Now — Use Before It’s Too Late!
+                      </button>
+                    )}
+                  </motion.div>
+                );
+              })}
             </div>
 
             {/* Save All Button */}
