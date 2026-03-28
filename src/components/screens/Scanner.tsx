@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Loader2, RefreshCcw, Upload, Trash2, CheckCircle2, ImageIcon } from "lucide-react";
+import { X, Loader2, RefreshCcw, Upload, Trash2, CheckCircle2, ImageIcon, AlertTriangle, RotateCcw, LogIn } from "lucide-react";
 import { Button } from "../ui/Button";
 import { supabase } from "../../utils/supabaseClient";
 import { Html5Qrcode } from "html5-qrcode";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePantry } from "../../hooks/usePantry";
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Types
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 interface ScanResult {
   item_name: string;
@@ -14,9 +18,16 @@ interface ScanResult {
   carbon_impact_factor: number;
   co2e_saved: number;
   is_expired: boolean;
-  freshness_grade: number;      // 1-10
+  freshness_grade: number;
   analysis_reasoning: string;
   previewUrl?: string;
+  // Error & retry fields
+  _error?: string;
+  _file?: File;
+  _retrying?: boolean;
+  // Rate-limit fields
+  _throttled?: boolean;
+  _retryAfter?: number;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -31,6 +42,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   OTHER: "bg-slate-100 text-slate-600",
 };
 
+const PENDING_STORAGE_KEY = "eco_scan_pending";
+
 const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
   const { refresh } = usePantry();
 
@@ -44,8 +57,18 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
   const [isUploadScanning, setIsUploadScanning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Review Queue — holds all scanned results
+  // Rate-limit / throttle state
+  const [isThrottled, setIsThrottled] = useState(false);
+  const [throttleCountdown, setThrottleCountdown] = useState(0);
+
+  // Sequential scan progress
+  const [scanProgress, setScanProgress] = useState<{ current: number; total: number } | null>(null);
+
+  // Review Queue — holds all scanned results (including errored items)
   const [reviewQueue, setReviewQueue] = useState<ScanResult[]>([]);
+
+  // Auth-gated save
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   // Hidden file input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,6 +81,25 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
       }
     };
   }, []);
+
+  // Throttle countdown timer
+  useEffect(() => {
+    if (throttleCountdown <= 0) {
+      setIsThrottled(false);
+      return;
+    }
+    const timer = setInterval(() => {
+      setThrottleCountdown(prev => {
+        if (prev <= 1) {
+          setIsThrottled(false);
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [throttleCountdown]);
 
   const startCamera = async () => {
     try {
@@ -79,7 +121,7 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
   // ─────────────────────────────────────────────
   // Core: scan a single File via the backend API
   // ─────────────────────────────────────────────
-  const scanFile = async (file: File, previewUrl: string): Promise<ScanResult | null> => {
+  const scanFile = async (file: File, previewUrl: string): Promise<ScanResult> => {
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -92,26 +134,85 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
         body: formData,
       });
 
-      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({ detail: response.statusText }));
+
+        // ── 429 Rate Limit ──
+        if (response.status === 429) {
+          const retryAfter = Math.ceil(errorBody?.detail?.retry_after ?? 60);
+          setIsThrottled(true);
+          setThrottleCountdown(retryAfter);
+          return {
+            item_name: file.name.split(".")[0] || "Unknown Item",
+            category: "OTHER",
+            estimated_expiry: "",
+            confidence_score: 0,
+            carbon_impact_factor: 0,
+            co2e_saved: 0,
+            is_expired: false,
+            freshness_grade: 0,
+            analysis_reasoning: "",
+            previewUrl,
+            _error: "Rate limited by Gemini API",
+            _file: file,
+            _throttled: true,
+            _retryAfter: retryAfter,
+          };
+        }
+
+        const statusLabel =
+          response.status === 422 ? "AI Parse Error" :
+          response.status === 503 ? "AI Service Unavailable" :
+          `Error ${response.status}`;
+        throw new Error(`${statusLabel}: ${typeof errorBody.detail === 'string' ? errorBody.detail : response.statusText}`);
+      }
 
       const data = await response.json();
-      return { ...data, previewUrl };
+      return { ...data, previewUrl, _file: file };
     } catch (err: any) {
-      console.error("Scan error for file:", file.name, err);
-      // Return a fallback result so the queue still fills
+      console.error("[Scan Error]", file.name, err);
       return {
         item_name: file.name.split(".")[0] || "Unknown Item",
         category: "OTHER",
-        estimated_expiry: new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
-        confidence_score: 0.3,
-        carbon_impact_factor: 1.0,
-        co2e_saved: 0.5,
+        estimated_expiry: "",
+        confidence_score: 0,
+        carbon_impact_factor: 0,
+        co2e_saved: 0,
         is_expired: false,
-        freshness_grade: 7,
-        analysis_reasoning: "Backend unreachable — using demo defaults.",
+        freshness_grade: 0,
+        analysis_reasoning: "",
         previewUrl,
+        _error: err.message || "Scan failed — unknown error",
+        _file: file,
       };
     }
+  };
+
+  // ─────────────────────────────────────────────
+  // Retry a single failed item
+  // ─────────────────────────────────────────────
+  const retryItem = async (index: number) => {
+    const item = reviewQueue[index];
+    if (!item._file || item._retrying) return;
+
+    // Don't retry if globally throttled
+    if (isThrottled) return;
+
+    // Mark as retrying, clear throttle flag
+    setReviewQueue(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], _retrying: true, _throttled: false };
+      return updated;
+    });
+
+    const result = await scanFile(item._file, item.previewUrl || "");
+
+    // Replace the item in-place
+    setReviewQueue(prev => {
+      const updated = [...prev];
+      updated[index] = result;
+      return updated;
+    });
   };
 
   // ─────────────────────────────────────────────
@@ -137,32 +238,40 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
       const file = new File([blob], "camera-scan.jpg", { type: "image/jpeg" });
       const previewUrl = URL.createObjectURL(blob);
       const result = await scanFile(file, previewUrl);
-      if (result) setReviewQueue(prev => [...prev, result]);
+      setReviewQueue(prev => [...prev, result]);
     } finally {
       setIsScanningCamera(false);
     }
   };
 
   // ─────────────────────────────────────────────
-  // File upload → parallel scan via Promise.all
+  // File upload → sequential scan with cooldown
   // ─────────────────────────────────────────────
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []).slice(0, 5); // max 5
+    const files = Array.from(e.target.files || []).slice(0, 5);
     if (files.length === 0) return;
     setIsUploadScanning(true);
+    setScanProgress({ current: 0, total: files.length });
 
     try {
-      const scanTasks = files.map(file => {
+      for (let i = 0; i < files.length; i++) {
+        setScanProgress({ current: i + 1, total: files.length });
+        const file = files[i];
         const previewUrl = URL.createObjectURL(file);
-        return scanFile(file, previewUrl);
-      });
+        const result = await scanFile(file, previewUrl);
+        setReviewQueue(prev => [...prev, result]);
 
-      const results = await Promise.all(scanTasks);
-      const valid = results.filter(Boolean) as ScanResult[];
-      setReviewQueue(prev => [...prev, ...valid]);
+        // If rate limited, stop processing remaining files
+        if (result._throttled) break;
+
+        // 2-second cooldown between requests (skip after last)
+        if (i < files.length - 1) {
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      }
     } finally {
       setIsUploadScanning(false);
-      // Reset input so the same files can be re-selected if needed
+      setScanProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -173,7 +282,6 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
   const removeFromQueue = (index: number) => {
     setReviewQueue(prev => {
       const updated = [...prev];
-      // Revoke object URL to free memory
       if (updated[index]?.previewUrl) URL.revokeObjectURL(updated[index].previewUrl!);
       updated.splice(index, 1);
       return updated;
@@ -181,20 +289,36 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
   };
 
   // ─────────────────────────────────────────────
-  // Bulk save all items in the queue to Supabase
+  // Auth check + Bulk save to Supabase
   // ─────────────────────────────────────────────
   const handleSaveAll = async () => {
-    if (reviewQueue.length === 0 || isSaving) return;
+    const saveable = reviewQueue.filter(item => !item._error);
+    if (saveable.length === 0 || isSaving) return;
     setIsSaving(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        alert("Please log in to save items to your pantry.");
+      // ── Auth Gate ──
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // Cache items in localStorage for recovery after login
+        const toCache = saveable.map(({ previewUrl, _file, _retrying, ...rest }) => rest);
+        localStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(toCache));
+        setShowLoginPrompt(true);
         return;
       }
 
-      const rows = reviewQueue.map(item => ({
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // ── Zero-ID Prevention ──
+      if (!user?.id) {
+        console.error("[Save] user.id is undefined — aborting insert.");
+        const toCache = saveable.map(({ previewUrl, _file, _retrying, ...rest }) => rest);
+        localStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(toCache));
+        setShowLoginPrompt(true);
+        return;
+      }
+
+      const rows = saveable.map(item => ({
         item_name: item.item_name,
         category: item.category,
         expiry_date: item.estimated_expiry,
@@ -206,20 +330,27 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
       const { error } = await supabase.from("pantry_items").insert(rows).select();
       if (error) throw error;
 
-      console.log(`Saved ${rows.length} items to pantry.`);
-      // Revoke all preview URLs
-      reviewQueue.forEach(item => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl); });
-      setReviewQueue([]);
+      console.log(`[Save] Saved ${rows.length} items to pantry.`);
+
+      // Revoke all preview URLs for saved items
+      saveable.forEach(item => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl); });
+
+      // Keep only errored items in the queue
+      setReviewQueue(prev => prev.filter(item => !!item._error));
+
+      localStorage.removeItem(PENDING_STORAGE_KEY);
       await refresh();
       if (onScanComplete) onScanComplete();
     } catch (err) {
-      console.error("Save error:", err);
+      console.error("[Save Error]", err);
     } finally {
       setIsSaving(false);
     }
   };
 
   const isAnyLoading = isScanningCamera || isUploadScanning;
+  const saveableCount = reviewQueue.filter(i => !i._error).length;
+  const errorCount = reviewQueue.filter(i => !!i._error).length;
 
   return (
     <div className="relative h-screen bg-black overflow-hidden flex flex-col">
@@ -246,11 +377,63 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
               transition={{ repeat: Infinity, duration: 2 }}
               className="mt-8 text-white font-black text-lg uppercase tracking-[0.2em]"
             >
-              {isUploadScanning ? "Analysing Images..." : "Scanning..."}
+              {isUploadScanning
+                ? scanProgress
+                  ? `Scanning ${scanProgress.current}/${scanProgress.total}…`
+                  : "Preparing…"
+                : "Scanning..."}
             </motion.p>
             {isUploadScanning && (
-              <p className="text-white/60 text-sm mt-2">Running Gemini Vision in parallel</p>
+              <p className="text-white/60 text-sm mt-2">Processing sequentially with cooldown</p>
             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Login Prompt Modal ─── */}
+      <AnimatePresence>
+        {showLoginPrompt && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center">
+                  <LogIn className="w-6 h-6 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Sign In Required</h3>
+                  <p className="text-xs text-slate-400">Your items have been saved locally</p>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed mb-6">
+                You need to be signed in to save items to your pantry. Your scanned items have been cached and will be
+                available after you sign in.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLoginPrompt(false)}
+                  className="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-sm font-bold transition-colors"
+                >
+                  Continue as Guest
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLoginPrompt(false);
+                    // Trigger navigation to sign-in by reloading (auth state will redirect)
+                    window.location.reload();
+                  }}
+                  className="flex-1 h-12 bg-[#107050] hover:bg-[#065A3F] text-white rounded-2xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                >
+                  <LogIn className="w-4 h-4" /> Sign In
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -287,7 +470,10 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
             <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 shrink-0">
               <div>
                 <h3 className="text-lg font-black text-slate-900 tracking-tight">Review Queue</h3>
-                <p className="text-xs text-slate-400 font-medium">{reviewQueue.length} item{reviewQueue.length > 1 ? "s" : ""} identified by Gemini AI</p>
+                <p className="text-xs text-slate-400 font-medium">
+                  {saveableCount} item{saveableCount !== 1 ? "s" : ""} ready
+                  {errorCount > 0 && <span className="text-red-500 ml-1">· {errorCount} failed</span>}
+                </p>
               </div>
               <button onClick={() => { reviewQueue.forEach(i => { if (i.previewUrl) URL.revokeObjectURL(i.previewUrl); }); setReviewQueue([]); }} className="text-slate-400 hover:text-slate-700 transition-colors p-1">
                 <X className="w-5 h-5" />
@@ -297,6 +483,97 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
             {/* Scrollable item list */}
             <div className="overflow-y-auto flex-1 px-4 py-3 flex flex-col gap-3">
               {reviewQueue.map((item, idx) => {
+                const isError = !!item._error;
+                const isRetrying = !!item._retrying;
+
+                // ── Throttled Card (amber rate-limit variant) ──
+                if (item._throttled) {
+                  return (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="flex flex-col gap-2 rounded-2xl p-3 border bg-amber-50 border-amber-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-amber-100 flex items-center justify-center">
+                          {item.previewUrl
+                            ? <img src={item.previewUrl} alt={item.item_name} className="w-full h-full object-cover opacity-50" />
+                            : <AlertTriangle className="w-6 h-6 text-amber-400" />
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-black text-sm text-amber-700 truncate">{item.item_name}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">RATE LIMITED</span>
+                            {throttleCountdown > 0 && (
+                              <span className="text-[11px] font-bold text-amber-600">Try again in {throttleCountdown}s</span>
+                            )}
+                          </div>
+                        </div>
+                        <button onClick={() => removeFromQueue(idx)} className="text-slate-300 hover:text-amber-500 transition-colors shrink-0">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => retryItem(idx)}
+                        disabled={isRetrying || isThrottled}
+                        className="w-full text-[11px] font-black text-amber-700 bg-amber-100 hover:bg-amber-200 disabled:opacity-60 rounded-xl py-2.5 transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        {isRetrying
+                          ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Retrying…</>
+                          : isThrottled
+                            ? <><AlertTriangle className="w-3.5 h-3.5" /> Wait {throttleCountdown}s</>
+                            : <><RotateCcw className="w-3.5 h-3.5" /> Retry This Item</>
+                        }
+                      </button>
+                    </motion.div>
+                  );
+                }
+
+                // ── Error Card ──
+                if (isError) {
+                  return (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="flex flex-col gap-2 rounded-2xl p-3 border bg-red-50 border-red-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Preview */}
+                        <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-red-100 flex items-center justify-center">
+                          {item.previewUrl
+                            ? <img src={item.previewUrl} alt={item.item_name} className="w-full h-full object-cover opacity-50" />
+                            : <AlertTriangle className="w-6 h-6 text-red-400" />
+                          }
+                        </div>
+                        {/* Error info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-black text-sm text-red-700 truncate">{item.item_name}</p>
+                          <p className="text-[11px] text-red-500 leading-snug mt-0.5 line-clamp-2">{item._error}</p>
+                        </div>
+                        {/* Remove */}
+                        <button onClick={() => removeFromQueue(idx)} className="text-slate-300 hover:text-red-500 transition-colors shrink-0">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {/* Retry Button */}
+                      <button
+                        onClick={() => retryItem(idx)}
+                        disabled={isRetrying}
+                        className="w-full text-[11px] font-black text-red-700 bg-red-100 hover:bg-red-200 disabled:opacity-60 rounded-xl py-2.5 transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        {isRetrying
+                          ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Retrying…</>
+                          : <><RotateCcw className="w-3.5 h-3.5" /> Retry This Item</>
+                        }
+                      </button>
+                    </motion.div>
+                  );
+                }
+
+                // ── Normal Card ──
                 const expired = item.is_expired;
                 const cookNow = !expired && item.freshness_grade < 4;
                 const cardBg = expired
@@ -379,7 +656,7 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
                     {/* Cook Now CTA */}
                     {cookNow && (
                       <button className="w-full text-[11px] font-black text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-xl py-2 transition-colors flex items-center justify-center gap-1.5">
-                        🍳 Cook Now — Use Before It’s Too Late!
+                        🍳 Cook Now — Use Before It's Too Late!
                       </button>
                     )}
                   </motion.div>
@@ -391,14 +668,19 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
             <div className="px-5 pb-8 pt-3 shrink-0">
               <button
                 onClick={handleSaveAll}
-                disabled={isSaving}
+                disabled={isSaving || saveableCount === 0}
                 className="w-full h-14 bg-[#107050] hover:bg-[#065A3F] disabled:opacity-70 text-white rounded-[22px] text-base font-black shadow-[0_10px_25px_-5px_rgba(16,112,80,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 {isSaving
                   ? <Loader2 className="w-5 h-5 animate-spin" />
-                  : <><CheckCircle2 className="w-5 h-5" /> Save All {reviewQueue.length} Item{reviewQueue.length > 1 ? "s" : ""}</>
+                  : <><CheckCircle2 className="w-5 h-5" /> Save {saveableCount} Item{saveableCount !== 1 ? "s" : ""}</>
                 }
               </button>
+              {errorCount > 0 && (
+                <p className="text-center text-[11px] text-red-500 font-bold mt-2">
+                  {errorCount} item{errorCount !== 1 ? "s" : ""} failed — retry or remove before saving
+                </p>
+              )}
             </div>
           </motion.div>
         )}
