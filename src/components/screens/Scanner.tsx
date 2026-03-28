@@ -72,7 +72,7 @@ const Scanner = ({ onScanComplete }) => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8000/scan', {
+      const response = await fetch('http://127.0.0.1:8000/scan', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session?.access_token || ''}`
