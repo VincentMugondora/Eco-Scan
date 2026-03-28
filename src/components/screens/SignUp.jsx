@@ -35,11 +35,17 @@ const SignUp = ({ onSignUp, onNavigateToSignIn }) => {
         }
       });
 
-      if (error) throw error;
-      
-      // Auto-login or navigate based on Supabase email confirmation settings
-      // We assume they can sign in immediately for this demo or it gets handled.
-      onSignUp(); 
+      if (data?.user?.identities?.length === 0) {
+        setError("This email is already registered. Please sign in.");
+        return;
+      }
+
+      if (data.session) {
+        onSignUp(); 
+      } else {
+        alert("Account created! Please check your email to confirm your account before signing in.");
+        onNavigateToSignIn();
+      }
     } catch (err) {
       setError(err.message);
     } finally {

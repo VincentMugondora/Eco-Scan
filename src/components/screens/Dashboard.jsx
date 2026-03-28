@@ -20,9 +20,39 @@ const chartData = [
 
 import { usePantry } from "../../hooks/usePantry";
 import { calculateCO2eSaved } from "../../utils/impactMath";
+import { supabase } from "../../utils/supabaseClient";
 
 const Dashboard = ({ setActiveTab }) => {
-  const { items, loading } = usePantry();
+  const { items, loading: pantryLoading } = usePantry();
+  
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [greeting, setGreeting] = useState("Hello,");
+  const [userLoading, setUserLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Fallback to email prefix if no full_name is set
+          const name = user.user_metadata?.full_name || user.email?.split('@')[0] || "Eco Warrior";
+          setUserName(name.split(' ')[0]); // Use first name for casual greeting
+          setUserEmail(user.email || "");
+        }
+      } catch (err) {
+        console.error("Error fetching user session:", err);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+    fetchUser();
+
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good morning,");
+    else if (hour < 18) setGreeting("Good afternoon,");
+    else setGreeting("Good evening,");
+  }, []);
 
   // Calculate Scientific Carbon Impact using shared logic
   const totalImpact = items.reduce((acc, item) => {
@@ -44,7 +74,7 @@ const Dashboard = ({ setActiveTab }) => {
     { day: 'Sun', co2: totalImpact },
   ];
 
-  if (loading) {
+  if (pantryLoading || userLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F8FAFC]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#107050]"></div>
@@ -58,16 +88,16 @@ const Dashboard = ({ setActiveTab }) => {
       {/* Top App Bar */}
       <div className="flex justify-between items-center mb-6 pt-2">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden relative">
+          <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden relative bg-[#F1F5F9] flex items-center justify-center">
             <img 
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop" 
+              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userEmail || 'default'}&backgroundColor=e2e8f0`} 
               alt="Profile" 
               className="w-full h-full object-cover"
             />
           </div>
           <div>
-             <p className="text-[12px] text-[#64748B] font-medium leading-tight">Good morning,</p>
-             <h1 className="text-[18px] font-black text-[#0F172A] leading-tight tracking-tight">Vincent</h1>
+             <p className="text-[12px] text-[#64748B] font-medium leading-tight">{greeting}</p>
+             <h1 className="text-[18px] font-black text-[#0F172A] leading-tight tracking-tight">{userName || "Eco Warrior"}</h1>
           </div>
         </div>
         <div className="flex items-center gap-3">

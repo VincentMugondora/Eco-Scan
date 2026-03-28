@@ -17,7 +17,7 @@ const SignIn = ({ onSignIn, onNavigateToSignUp }) => {
       return;
     }
     
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
     
     try {
@@ -32,7 +32,7 @@ const SignIn = ({ onSignIn, onNavigateToSignUp }) => {
     } catch (err) {
       setError(err.message);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
