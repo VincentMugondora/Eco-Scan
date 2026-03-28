@@ -51,8 +51,10 @@ async def scan_food_item(file: UploadFile = File(...)):
             print("CRITICAL: GEMINI_API_KEY is missing!")
             raise HTTPException(status_code=500, detail="Gemini API Key not configured")
 
-        # 1. Read and encode the image
+        # 1. Read and encode the image — Gemini SDK requires base64, not raw bytes
         image_data = await file.read()
+        image_b64 = base64.b64encode(image_data).decode('utf-8')
+        print(f"API key present: {'YES' if os.getenv('GEMINI_API_KEY') else 'NO'} | Image size: {len(image_data)} bytes")
         
         # 2. Define the Vision Prompt for Gemini
         prompt = """You are a food safety AI for Eco-Scan. Perform TWO parallel checks on this image:
@@ -93,17 +95,25 @@ Example:
         try:
             response = model.generate_content([
                 prompt,
-                {"mime_type": "image/jpeg", "data": image_data}
+                {"mime_type": file.content_type or "image/jpeg", "data": image_b64}
             ])
-            print(f"Gemini response received.")
+            print(f"Gemini raw response: {response.text[:200]}")
         except Exception as e:
             print(f"Gemini API Error: {str(e)}")
+            print(traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Gemini API Error: {str(e)}")
         
-        # 4. Clean and parse the response
+        # 4. Clean and parse the response — strip markdown code fences
         try:
-            text_response = response.text.replace('```json', '').replace('```', '').strip()
-            result_data = json.loads(text_response)
+            raw = response.text
+            # Strip markdown code fences: ```json ... ``` or ``` ... ```
+            cleaned = raw.strip()
+            if cleaned.startswith('```'):
+                cleaned = cleaned.split('\n', 1)[-1]  # drop first line
+            if cleaned.endswith('```'):
+                cleaned = cleaned.rsplit('```', 1)[0]  # drop trailing fence
+            cleaned = cleaned.strip()
+            result_data = json.loads(cleaned)
         except Exception as e:
             print(f"JSON Parsing Error: {str(e)} | Raw: {response.text}")
             # Fallback for structured response if Gemini hallucinates
