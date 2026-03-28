@@ -1,18 +1,18 @@
 -- ==========================================
--- Eco-Scan: Full Supabase Database Setup
+-- Eco-Scan: FINAL "Self-Healing" SQL Setup
 -- Run this in the Supabase SQL Editor
 -- ==========================================
 
--- 1. Create the pantry_items table
+-- 1. Create the pantry_items table with correct fields
 CREATE TABLE IF NOT EXISTS public.pantry_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    name TEXT NOT NULL,
+    item_name TEXT NOT NULL,
     category TEXT CHECK (category IN ('GRAINS', 'PROTEIN', 'DAIRY', 'VEGETABLES', 'FRUITS', 'OTHER')) NOT NULL,
     quantity TEXT,
     weight_kg DECIMAL DEFAULT 0.5,
     expiry_date DATE NOT NULL,
-    status TEXT DEFAULT 'fresh', -- 'fresh', 'soon', 'expired'
+    status TEXT DEFAULT 'fresh',
     image_url TEXT,
     freshness_percentage INTEGER DEFAULT 100,
     is_cooked BOOLEAN DEFAULT FALSE,
@@ -22,10 +22,13 @@ CREATE TABLE IF NOT EXISTS public.pantry_items (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 2. Enable Row Level Security (RLS)
+-- 2. Force Schema Cache Refresh
+NOTIFY pgrst, 'reload schema';
+
+-- 3. Enable Row Level Security (RLS)
 ALTER TABLE public.pantry_items ENABLE ROW LEVEL SECURITY;
 
--- 3. Create RLS Policies (Idempotent)
+-- 4. Create RLS Policies (Idempotent)
 DO $$ 
 BEGIN
     -- Select Policy
@@ -52,18 +55,3 @@ BEGIN
             FOR DELETE USING (auth.uid() = user_id);
     END IF;
 END $$;
-
--- 4. Setup Updated At Trigger
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-DROP TRIGGER IF EXISTS update_pantry_items_updated_at ON public.pantry_items;
-CREATE TRIGGER update_pantry_items_updated_at
-    BEFORE UPDATE ON public.pantry_items
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();

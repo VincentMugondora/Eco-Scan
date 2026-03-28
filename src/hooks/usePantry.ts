@@ -3,34 +3,52 @@ import { supabase } from "../utils/supabaseClient";
 
 export interface PantryItem {
   id: string;
-  name: string;
+  item_name: string; // Matched to SQL schema
   category: string;
-  quantity: string;
   expiry_date: string;
-  status: "fresh" | "soon" | "expired";
-  image_url: string;
-  freshness_percentage: number;
   weight_kg: number;
+  carbon_impact_factor: number;
   is_cooked: boolean;
+  status?: "fresh" | "warning" | "expired"; // Computed on the fly
 }
 
 export const usePantry = () => {
   const [items, setItems] = useState<PantryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const calculateStatus = (expiryDate: string): "fresh" | "warning" | "expired" => {
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return "expired";
+    if (diffDays <= 2) return "warning"; // Less than 48 hours
+    return "fresh";
+  };
+
   const fetchItems = async () => {
+    setLoading(true);
     const { data, error } = await supabase
-      .from("pantry_items")
-      .select("*, carbon_impact_factor")
+      .from("pantry_items") // Ensure this is exactly 'pantry_items' in Supabase
+      .select("*")
       .order("expiry_date", { ascending: true });
 
-    if (error) console.error("Error fetching pantry:", error);
-    else setItems(data || []);
+    if (error) {
+      console.error("Error fetching pantry:", error.message);
+      setItems([]);
+    } else {
+      // Map data to include the calculated status
+      const formattedData = (data || []).map((item: any) => ({
+        ...item,
+        status: calculateStatus(item.expiry_date)
+      }));
+      setItems(formattedData);
+    }
     setLoading(false);
   };
 
   const markAsCooked = async (id: string) => {
-    // Optimistic Update
     const previousItems = [...items];
     setItems(items.map(item => item.id === id ? { ...item, is_cooked: true } : item));
 
@@ -41,30 +59,21 @@ export const usePantry = () => {
 
     if (error) {
       console.error("Error marking as cooked:", error);
-      setItems(previousItems); // Rollback
+      setItems(previousItems);
     }
   };
 
   useEffect(() => {
     fetchItems();
-
-    // Real-time subscription
+    
     const subscription = supabase
       .channel("pantry_changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "pantry_items" }, payload => {
-        if (payload.eventType === "INSERT") {
-          setItems(prev => [...prev, payload.new as PantryItem].sort((a,b) => a.expiry_date.localeCompare(b.expiry_date)));
-        } else if (payload.eventType === "UPDATE") {
-          setItems(prev => prev.map(item => item.id === payload.new.id ? payload.new as PantryItem : item));
-        } else if (payload.eventType === "DELETE") {
-          setItems(prev => prev.filter(item => item.id === payload.old.id));
-        }
+      .on("postgres_changes", { event: "*", schema: "public", table: "pantry_items" }, () => {
+        fetchItems(); // Simpler: re-fetch to ensure status is recalculated
       })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(subscription);
-    };
+    return () => { supabase.removeChannel(subscription); };
   }, []);
 
   return { items, loading, markAsCooked, refresh: fetchItems };

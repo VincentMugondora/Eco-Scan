@@ -30,10 +30,9 @@ const Dashboard = ({ setActiveTab }) => {
     return acc + (weight * factor);
   }, 0);
 
-  const urgentItems = items.filter(item => {
-    const days = Math.floor((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    return days <= 2 && !item.is_cooked;
-  }).slice(0, 3);
+  const urgentItems = items.filter(item => 
+    item.status === 'warning' && !item.is_cooked
+  ).slice(0, 5); // Show more urgent items if available
 
   // Generate dynamic chart data based on items added per day (simplified for demo)
   const dynamicChartData = [
@@ -109,7 +108,7 @@ const Dashboard = ({ setActiveTab }) => {
             </button>
            </div>
            
-           <div className="w-full min-h-[180px] lg:min-h-[200px] h-[180px] lg:h-[200px] relative">
+           <div className="w-full h-64 min-h-[250px] relative">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={dynamicChartData}>
                   <defs>
@@ -172,24 +171,31 @@ const Dashboard = ({ setActiveTab }) => {
           <button onClick={() => setActiveTab('pantry')} className="text-[12px] font-bold text-[#107050] hover:underline">See all</button>
         </div>
 
-        <div className="flex flex-col gap-3">
-          {urgentItems.map((item, index) => (
-            <Card key={index} className="px-4 py-3 bg-white border border-[#E2E8F0] rounded-[20px] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-[#F8FAFC] border border-[#F1F5F9] shrink-0 p-1">
-                <img src={item.image_url} alt={item.name} className="w-full h-full object-contain rounded-[12px] mix-blend-multiply" />
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-1 px-1">
+            {urgentItems.length > 0 ? urgentItems.map((item, index) => (
+              <Card key={index} className="min-w-[280px] w-[280px] px-4 py-4 bg-white border border-[#E2E8F0] rounded-[24px] shadow-sm flex items-center gap-4 shrink-0 transition-transform hover:scale-[1.02]">
+                <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-100 shrink-0 p-1 flex items-center justify-center">
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.item_name} className="w-full h-full object-contain rounded-[12px]" />
+                  ) : (
+                    <Utensils className="w-6 h-6 text-amber-500" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                   <h4 className="font-bold text-[15px] text-[#0F172A] mb-1 truncate">{item.item_name}</h4>
+                   <div className="flex items-center gap-2">
+                     <span className="text-[10px] font-black uppercase tracking-wider text-amber-600">Urgent</span>
+                     <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                     <span className="text-[11px] font-bold text-slate-500">Expiring soon</span>
+                   </div>
+                </div>
+              </Card>
+            )) : (
+              <div className="w-full py-8 text-center bg-white rounded-[24px] border border-dashed border-slate-200">
+                <p className="text-slate-400 font-medium text-sm">No urgent items. Great job! 🌿</p>
               </div>
-              <div className="flex-1 min-w-0">
-                 <h4 className="font-bold text-[15px] text-[#0F172A] mb-1 truncate">{item.name}</h4>
-                 <ProgressBar value={item.freshness_percentage || 50} variant={item.freshness_percentage < 30 ? 'danger' : 'warning'} className="w-full h-[5px] bg-[#F1F5F9]" />
-              </div>
-              <div className="text-right shrink-0">
-                 <span className={`text-[10px] font-black uppercase tracking-wide px-2 py-1 rounded-md ${item.freshness_percentage < 30 ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-500'}`}>
-                   {Math.floor((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}d Left
-                 </span>
-              </div>
-            </Card>
-          ))}
-        </div>
+            )}
+          </div>
       </div>
       {/* Perfect Pairings / AI Suggestions Placeholder */}
       <div className="mt-8 mb-4 px-1">

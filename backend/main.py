@@ -23,6 +23,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {"message": "Eco-Scan AI Bridge is running"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "message": "Backend is reachable"}
+
 class ScanResponse(BaseModel):
     item_name: str
     category: str
