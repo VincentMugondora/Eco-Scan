@@ -36,6 +36,6 @@
 
 @layer base {
   body {
-    @apply bg-neutral-bg text-text-primary font-sans antialiased;
+    @apply bg-neutral-bg text-text-main font-sans antialiased;
   }
 }

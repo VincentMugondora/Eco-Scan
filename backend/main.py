@@ -9,9 +9,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Setup Gemini 3 Flash / 1.5 Flash in 2026
+# Setup Gemini 2.0 Flash (2026 standard for Flash performance)
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 app = FastAPI(title="Eco-Scan AI Bridge")
 
@@ -28,6 +28,7 @@ class ScanResponse(BaseModel):
     estimated_expiry: str
     confidence_score: float
     carbon_impact_factor: float
+    co2e_saved: float
 
 @app.post("/scan", response_model=ScanResponse)
 async def scan_food_item(file: UploadFile = File(...)):
@@ -56,6 +57,10 @@ async def scan_food_item(file: UploadFile = File(...)):
         # 4. Clean and parse the response
         text_response = response.text.replace('```json', '').replace('```', '').strip()
         result = json.loads(text_response)
+        
+        # 5. Map impact to 0.5kg default weight for CO2e calculation
+        # CO2e Saved = Carbon Impact Factor * 0.5kg
+        result["co2e_saved"] = round(result.get("carbon_impact_factor", 2.5) * 0.5, 3)
         
         return result
     except Exception as e:

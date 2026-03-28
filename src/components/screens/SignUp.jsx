@@ -8,7 +8,7 @@ const SignUp = ({ onSignUp, onNavigateToSignIn }) => {
   const [agreed, setAgreed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col lg:flex-row font-sans select-none overflow-hidden">
+    <div className="h-screen lg:h-screen h-[100dvh] bg-white flex flex-col lg:flex-row font-sans select-none overflow-hidden">
       {/* Visual Side (Left) - Only visible on LG screens and up */}
       <div className="hidden lg:flex lg:w-[45%] relative bg-[#0F172A] flex-col justify-end p-20 overflow-hidden">
         <motion.img 

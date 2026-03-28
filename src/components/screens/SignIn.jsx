@@ -8,7 +8,7 @@ const SignIn = ({ onSignIn, onNavigateToSignUp }) => {
   const [email, setEmail] = useState("nature.lover@example.com");
 
   return (
-    <div className="min-h-screen bg-white flex flex-col lg:flex-row font-sans select-none overflow-hidden">
+    <div className="h-screen lg:h-screen h-[100dvh] bg-white flex flex-col lg:flex-row font-sans select-none overflow-hidden">
       {/* Visual Side (Left) - Only visible on LG screens and up */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-[#0F172A] flex-col justify-end p-20 overflow-hidden">
         <motion.img 
