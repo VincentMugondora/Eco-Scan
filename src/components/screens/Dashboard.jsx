@@ -19,15 +19,14 @@ const chartData = [
 ];
 
 import { usePantry } from "../../hooks/usePantry";
+import { calculateCO2eSaved } from "../../utils/impactMath";
 
 const Dashboard = ({ setActiveTab }) => {
   const { items, loading } = usePantry();
 
-  // Calculate Scientific Carbon Impact: C_total = sum(W_i * I_i)
+  // Calculate Scientific Carbon Impact using shared logic
   const totalImpact = items.reduce((acc, item) => {
-    const weight = item.weight_kg || 0.5; // Default 500g if unknown
-    const factor = item.carbon_impact_factor || 2.5; 
-    return acc + (weight * factor);
+    return acc + calculateCO2eSaved(item.weight_kg, item.carbon_impact_factor);
   }, 0);
 
   const urgentItems = items.filter(item => 
@@ -108,7 +107,7 @@ const Dashboard = ({ setActiveTab }) => {
             </button>
            </div>
            
-           <div className="w-full h-64 min-h-[250px] relative">
+           <div className="w-full h-80 min-h-[320px] relative">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={dynamicChartData}>
                   <defs>

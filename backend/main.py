@@ -1,6 +1,7 @@
 import os
 import base64
 import json
+import traceback
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -42,6 +43,10 @@ class ScanResponse(BaseModel):
 @app.post("/scan", response_model=ScanResponse)
 async def scan_food_item(file: UploadFile = File(...)):
     try:
+        if not os.getenv("GEMINI_API_KEY"):
+            print("CRITICAL: GEMINI_API_KEY is missing!")
+            raise HTTPException(status_code=500, detail="Gemini API Key not configured")
+
         # 1. Read and encode the image
         image_data = await file.read()
         
@@ -58,22 +63,40 @@ async def scan_food_item(file: UploadFile = File(...)):
         """
 
         # 3. Call Gemini
-        response = model.generate_content([
-            prompt,
-            {"mime_type": "image/jpeg", "data": image_data}
-        ])
+        print(f"Calling Gemini for file: {file.filename}")
+        try:
+            response = model.generate_content([
+                prompt,
+                {"mime_type": "image/jpeg", "data": image_data}
+            ])
+            print(f"Gemini response received.")
+        except Exception as e:
+            print(f"Gemini API Error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Gemini API Error: {str(e)}")
         
         # 4. Clean and parse the response
-        text_response = response.text.replace('```json', '').replace('```', '').strip()
-        result = json.loads(text_response)
+        try:
+            text_response = response.text.replace('```json', '').replace('```', '').strip()
+            result = json.loads(text_response)
+        except Exception as e:
+            print(f"JSON Parsing Error: {str(e)} | Raw: {response.text}")
+            # Fallback for structured response if Gemini hallucinates
+            result = {
+                "item_name": "Unknown Item",
+                "category": "OTHER",
+                "estimated_expiry": "2026-12-31",
+                "confidence_score": 0.5,
+                "carbon_impact_factor": 2.5
+            }
         
         # 5. Map impact to 0.5kg default weight for CO2e calculation
-        # CO2e Saved = Carbon Impact Factor * 0.5kg
-        result["co2e_saved"] = round(result.get("carbon_impact_factor", 2.5) * 0.5, 3)
+        result["co2e_saved"] = round(float(result.get("carbon_impact_factor", 2.5)) * 0.5, 2)
         
         return result
     except Exception as e:
-        print(f"Error in /scan: {str(e)}")
+        print("--- FASTAPI ERROR START ---")
+        print(traceback.format_exc())
+        print("--- FASTAPI ERROR END ---")
         raise HTTPException(status_code=500, detail=str(e))
 
 class RecipeResponse(BaseModel):

@@ -110,26 +110,37 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
     if (!scanResult) return;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user) {
+        alert("Please log in to save items to your pantry.");
+        console.warn("No active session found. RLS will block this insert.");
+        return;
+      }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("pantry_items")
         .insert([{
-          item_name: scanResult.item_name, // Changed from name to item_name
+          item_name: scanResult.item_name,
           category: scanResult.category,
           expiry_date: scanResult.estimated_expiry,
           carbon_impact_factor: scanResult.carbon_impact_factor,
           co2e_saved: scanResult.co2e_saved,
-          user_id: user?.id
-        }]);
+          user_id: session.user.id
+        }])
+        .select();
 
-      if (error) throw error;
-
-      await refresh(); // Trigger global state update
+      if (error) {
+        console.error("Supabase Save Error Details:", error);
+        throw error;
+      }
+      
+      console.log("Successfully saved item:", data);
+      await refresh(); 
       if (onScanComplete) onScanComplete();
       setScanResult(null);
     } catch (err) {
-      console.error("Save error:", err);
+      console.error("Save error caught in Scanner:", err);
     }
   };
 
