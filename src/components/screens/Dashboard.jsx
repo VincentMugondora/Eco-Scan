@@ -19,11 +19,14 @@ const chartData = [
 ];
 
 import { usePantry } from "../../hooks/usePantry";
+import { useUserLocation } from "../../hooks/useUserLocation";
 import { calculateCO2eSaved } from "../../utils/impactMath";
+import { calculateLocalImpact } from "../../services/impactLogic";
 import { supabase } from "../../utils/supabaseClient";
 
 const Dashboard = ({ setActiveTab }) => {
   const { items, loading: pantryLoading } = usePantry();
+  const { city, loading: locationLoading } = useUserLocation();
   
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -59,6 +62,9 @@ const Dashboard = ({ setActiveTab }) => {
     return acc + calculateCO2eSaved(item.weight_kg, item.carbon_impact_factor);
   }, 0);
 
+  // City-adjusted local impact
+  const localImpact = calculateLocalImpact(items, city);
+
   const urgentItems = items.filter(item => 
     item.status === 'warning' && !item.is_cooked
   ).slice(0, 5); // Show more urgent items if available
@@ -74,7 +80,7 @@ const Dashboard = ({ setActiveTab }) => {
     { day: 'Sun', co2: totalImpact },
   ];
 
-  if (pantryLoading || userLoading) {
+  if (pantryLoading || userLoading || locationLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F8FAFC]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#107050]"></div>
@@ -120,14 +126,28 @@ const Dashboard = ({ setActiveTab }) => {
            <div>
              <div className="flex items-center gap-2 mb-3">
                <Sparkles className="w-4 h-4 text-[#A7F3D0]" />
-               <span className="text-[11px] font-black uppercase tracking-widest text-[#D1EBE3]">Weekly Impact</span>
+               <span className="text-[11px] font-black uppercase tracking-widest text-[#D1EBE3]">
+                 Impact in {city.name}
+               </span>
              </div>
              <h2 className="text-[32px] lg:text-[40px] font-black leading-tight tracking-tight mb-2">
-                {totalImpact.toFixed(1)} <span className="text-[20px] font-bold text-[#D1EBE3]">kg CO₂e</span>
+                {localImpact.adjustedCO2eSavedKg.toFixed(1)} <span className="text-[20px] font-bold text-[#D1EBE3]">kg CO₂e</span>
              </h2>
              <p className="text-[13px] text-[#A7F3D0] max-w-[200px] leading-relaxed font-medium">
                You are tracking <span className="text-white font-bold">{items.length}</span> items and reducing your footprint!
              </p>
+
+             {/* Local Hero stat */}
+             {localImpact.zupcoKmEquivalent > 0 && (
+               <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10 max-w-[240px]">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-[#A7F3D0] mb-1">🏆 Local Hero</p>
+                 <p className="text-[12px] text-white font-medium leading-snug">
+                   You've saved enough CO₂e to offset{" "}
+                   <span className="font-black text-[#A7F3D0]">{localImpact.zupcoKmEquivalent} km</span>{" "}
+                   of travel on a {city.transportLabel}
+                 </p>
+               </div>
+             )}
              
              <button 
               onClick={() => setActiveTab('impact')}
