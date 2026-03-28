@@ -6,11 +6,20 @@ import { Html5Qrcode } from "html5-qrcode";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePantry } from "../../hooks/usePantry";
 
+interface ScanResult {
+  item_name: string;
+  category: string;
+  estimated_expiry: string;
+  confidence_score: number;
+  carbon_impact_factor: number;
+  co2e_saved: number;
+}
+
 const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
   const { refresh } = usePantry();
   const [isScanning, setIsScanning] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [scanResult, setScanResult] = useState(null);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const videoContainerId = "reader";
@@ -62,9 +71,11 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
       canvas.width = videoElement.videoWidth;
       canvas.height = videoElement.videoHeight;
       const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Could not get 2D context");
       ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+      if (!blob) throw new Error("Failed to capture image blob");
       const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
 
       // 2. Prepare API Call
@@ -84,9 +95,9 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
 
       const data = await response.json();
       setScanResult(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Scan error:", err);
-      const isNetworkError = (err instanceof TypeError) || err.message?.includes("fetch");
+      const isNetworkError = (err instanceof TypeError) || (err.message && err.message.includes("fetch"));
 
       if (isNetworkError) {
         console.warn("Backend unreachable at http://127.0.0.1:8000/scan. Check if FastAPI is running!");

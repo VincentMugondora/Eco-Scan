@@ -77,11 +77,11 @@ async def scan_food_item(file: UploadFile = File(...)):
         # 4. Clean and parse the response
         try:
             text_response = response.text.replace('```json', '').replace('```', '').strip()
-            result = json.loads(text_response)
+            result_data = json.loads(text_response)
         except Exception as e:
             print(f"JSON Parsing Error: {str(e)} | Raw: {response.text}")
             # Fallback for structured response if Gemini hallucinates
-            result = {
+            result_data = {
                 "item_name": "Unknown Item",
                 "category": "OTHER",
                 "estimated_expiry": "2026-12-31",
@@ -90,7 +90,12 @@ async def scan_food_item(file: UploadFile = File(...)):
             }
         
         # 5. Map impact to 0.5kg default weight for CO2e calculation
-        result["co2e_saved"] = round(float(result.get("carbon_impact_factor", 2.5)) * 0.5, 2)
+        impact_factor = float(result_data.get("carbon_impact_factor", 2.5))
+        co2e_saved = float(f"{(impact_factor * 0.5):.2f}")
+        
+        # Ensure result_data is a dict we can update
+        result = dict(result_data)
+        result["co2e_saved"] = co2e_saved
         
         return result
     except Exception as e:
