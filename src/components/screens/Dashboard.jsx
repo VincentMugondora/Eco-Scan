@@ -109,7 +109,7 @@ const Dashboard = ({ setActiveTab }) => {
             </button>
            </div>
            
-           <div className="w-full h-[180px] lg:h-[200px] relative">
+           <div className="w-full min-h-[180px] lg:min-h-[200px] h-[180px] lg:h-[200px] relative">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={dynamicChartData}>
                   <defs>
