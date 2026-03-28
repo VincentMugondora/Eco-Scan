@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, User, MapPin, ChevronLeft, ShieldCheck, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import signUpBg from "../../assets/auth-signup.png";
 import { supabase } from "../../utils/supabaseClient";
+import { getUserLocation } from "../../utils/geo";
 
 const SignUp = ({ onSignUp, onNavigateToSignIn }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,9 +11,11 @@ const SignUp = ({ onSignUp, onNavigateToSignIn }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [location, setLocation] = useState(""); // Optional
+  const [location, setLocation] = useState(""); // Optional display field
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // 'idle' | 'locating' | 'registering' | 'finalising'
+  const [signupStep, setSignupStep] = useState("idle");
 
   const handleSignUpSubmit = async () => {
     if (!email || !password || !fullName || !agreed) {
@@ -24,32 +27,55 @@ const SignUp = ({ onSignUp, onNavigateToSignIn }) => {
     setError(null);
     
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // ── Step 1: Get location ────────────────────────────────
+      setSignupStep("locating");
+      const geo = await getUserLocation();
+
+      // ── Step 2: Sign Up ─────────────────────────────────────
+      setSignupStep("registering");
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
-            location: location
+            location: location || geo.region,
+            lat: geo.lat,
+            lng: geo.lng,
+            location_is_default: geo.isDefault,
+            signup_region: geo.region,
           }
         }
       });
+
+      if (signUpError) throw signUpError;
 
       if (data?.user?.identities?.length === 0) {
         setError("This email is already registered. Please sign in.");
         return;
       }
 
+      // ── Step 3: Finalise metadata ───────────────────────────
       if (data.session) {
-        onSignUp(); 
+        setSignupStep("finalising");
+        await supabase.auth.updateUser({
+          data: {
+            signup_region: geo.region,
+            lat: geo.lat,
+            lng: geo.lng,
+            location_accuracy_m: geo.accuracy ?? null,
+          }
+        });
+        onSignUp();
       } else {
-        alert("Account created! Please check your email to confirm your account before signing in.");
+        alert("Account created! Please check your email to confirm before signing in.");
         onNavigateToSignIn();
       }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+      setSignupStep("idle");
     }
   };
 
@@ -225,13 +251,54 @@ const SignUp = ({ onSignUp, onNavigateToSignIn }) => {
               </div>
             )}
 
+            {/* ─── Animated Signup Progress ─── */}
+            <AnimatePresence>
+              {signupStep !== "idle" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="bg-[#F0FDF8] border border-[#BBF7D0] rounded-2xl p-4 flex flex-col gap-2">
+                    {[
+                      { key: "locating",    icon: "📍", label: "Locating your kitchen..." },
+                      { key: "registering", icon: "🔐", label: "Creating your account..." },
+                      { key: "finalising",  icon: "✅", label: "Saving your eco-profile..." },
+                    ].map((step, idx, arr) => {
+                      const stepKeys = arr.map(s => s.key);
+                      const currentIdx = stepKeys.indexOf(signupStep);
+                      const thisIdx = stepKeys.indexOf(step.key);
+                      const isDone = thisIdx < currentIdx;
+                      const isActive = thisIdx === currentIdx;
+                      return (
+                        <motion.div
+                          key={step.key}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: isActive || isDone ? 1 : 0.35, x: 0 }}
+                          className="flex items-center gap-3"
+                        >
+                          <span className={`text-base ${isDone ? "opacity-60" : ""}`}>{step.icon}</span>
+                          <span className={`text-[13px] font-bold ${
+                            isActive ? "text-[#107050]" : isDone ? "text-[#64748B]" : "text-[#94A3B8]"
+                          }`}>{step.label}</span>
+                          {isActive && <Loader2 className="w-3.5 h-3.5 text-[#107050] animate-spin ml-auto" />}
+                          {isDone && <span className="ml-auto text-[#10B981] font-black text-xs">✓</span>}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <button 
               onClick={handleSignUpSubmit}
               disabled={loading}
               className="w-full h-14 bg-[#107050] hover:bg-[#065A3F] disabled:opacity-70 disabled:hover:bg-[#107050] text-white rounded-2xl text-[16px] font-black shadow-[0_8px_24px_-6px_rgba(16,112,80,0.4)] transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2 group"
             >
               {loading ? (
-                 <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
                   Create Account
