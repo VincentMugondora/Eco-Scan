@@ -80,6 +80,8 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
 
       // 2. Prepare API Call
       const { data: { session } } = await supabase.auth.getSession();
+      // Use explicit user fetch for higher reliability during save, but session for header
+      const token = session?.access_token || '';
       const formData = new FormData();
       formData.append('file', file);
 
@@ -121,11 +123,11 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
     if (!scanResult) return;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (!session?.user) {
+      if (!user) {
         alert("Please log in to save items to your pantry.");
-        console.warn("No active session found. RLS will block this insert.");
+        console.warn("No active user found. RLS will block this insert.");
         return;
       }
 
@@ -137,7 +139,7 @@ const Scanner = ({ onScanComplete }: { onScanComplete?: () => void }) => {
           expiry_date: scanResult.estimated_expiry,
           carbon_impact_factor: scanResult.carbon_impact_factor,
           co2e_saved: scanResult.co2e_saved,
-          user_id: session.user.id
+          user_id: user.id
         }])
         .select();
 

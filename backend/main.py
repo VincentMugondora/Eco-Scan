@@ -8,7 +8,8 @@ from pydantic import BaseModel
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-load_dotenv()
+# Look for .env in the parent directory (root)
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 # Setup Gemini 2.0 Flash (2026 standard for Flash performance)
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))

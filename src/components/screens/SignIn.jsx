@@ -1,11 +1,40 @@
 import React, { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, ChevronLeft } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ChevronLeft, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import signInBg from "../../assets/auth-signin.png";
+import { supabase } from "../../utils/supabaseClient";
 
 const SignIn = ({ onSignIn, onNavigateToSignUp }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("nature.lover@example.com");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSignInSubmit = async () => {
+    if (!email || !password) {
+      setError("Please fill in all fields");
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      
+      onSignIn(); // Let App.jsx handle navigation
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="h-screen lg:h-screen h-[100dvh] bg-white flex flex-col lg:flex-row font-sans select-none overflow-hidden">
@@ -113,6 +142,8 @@ const SignIn = ({ onSignIn, onNavigateToSignUp }) => {
                 </div>
                 <input 
                   type={showPassword ? "text" : "password"} 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full h-14 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl pl-12 pr-12 text-[15px] font-bold text-[#0F172A] focus:outline-none focus:border-[#107050] focus:ring-1 focus:ring-[#107050] transition-all placeholder:text-[#94A3B8] placeholder:font-medium"
                 />
@@ -125,11 +156,18 @@ const SignIn = ({ onSignIn, onNavigateToSignUp }) => {
               </div>
             </div>
 
+            {error && (
+              <div className="bg-red-50 text-red-600 text-sm font-bold p-4 rounded-xl border border-red-100 mt-2">
+                {error}
+              </div>
+            )}
+
             <button 
-              onClick={onSignIn}
-              className="w-full h-14 bg-[#107050] hover:bg-[#065A3F] text-white rounded-2xl text-[16px] font-black shadow-[0_8px_24px_-6px_rgba(16,112,80,0.4)] transition-all active:scale-[0.98] mt-2"
+              onClick={handleSignInSubmit}
+              disabled={loading}
+              className="w-full h-14 bg-[#107050] hover:bg-[#065A3F] disabled:opacity-70 disabled:hover:bg-[#107050] text-white rounded-2xl text-[16px] font-black shadow-[0_8px_24px_-6px_rgba(16,112,80,0.4)] transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2"
             >
-              Sign In
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
             </button>
 
             <div className="flex items-center gap-4 py-2">

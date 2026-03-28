@@ -1,11 +1,51 @@
 import React, { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, User, MapPin, ChevronLeft, ShieldCheck } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, MapPin, ChevronLeft, ShieldCheck, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import signUpBg from "../../assets/auth-signup.png";
+import { supabase } from "../../utils/supabaseClient";
 
 const SignUp = ({ onSignUp, onNavigateToSignIn }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [location, setLocation] = useState(""); // Optional
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSignUpSubmit = async () => {
+    if (!email || !password || !fullName || !agreed) {
+      setError("Please fill in all required fields and agree to terms");
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            location: location
+          }
+        }
+      });
+
+      if (error) throw error;
+      
+      // Auto-login or navigate based on Supabase email confirmation settings
+      // We assume they can sign in immediately for this demo or it gets handled.
+      onSignUp(); 
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="h-screen lg:h-screen h-[100dvh] bg-white flex flex-col lg:flex-row font-sans select-none overflow-hidden">
@@ -89,6 +129,8 @@ const SignUp = ({ onSignUp, onNavigateToSignIn }) => {
                   </div>
                   <input 
                     type="text" 
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                     placeholder="Jane Doe"
                     className="w-full h-13 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl pl-11 pr-4 text-[14px] font-bold text-[#0F172A] focus:outline-none focus:border-[#107050] focus:ring-1 focus:ring-[#107050] transition-all placeholder:text-[#94A3B8] placeholder:font-medium"
                   />
@@ -104,6 +146,8 @@ const SignUp = ({ onSignUp, onNavigateToSignIn }) => {
                   </div>
                   <input 
                     type="text" 
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
                     placeholder="Paris, FR"
                     className="w-full h-13 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl pl-11 pr-4 text-[14px] font-bold text-[#0F172A] focus:outline-none focus:border-[#107050] focus:ring-1 focus:ring-[#107050] transition-all placeholder:text-[#94A3B8] placeholder:font-medium"
                   />
@@ -120,6 +164,8 @@ const SignUp = ({ onSignUp, onNavigateToSignIn }) => {
                 </div>
                 <input 
                   type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="jane.doe@example.com"
                   className="w-full h-13 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl pl-11 pr-4 text-[14px] font-bold text-[#0F172A] focus:outline-none focus:border-[#107050] focus:ring-1 focus:ring-[#107050] transition-all placeholder:text-[#94A3B8] placeholder:font-medium"
                 />
@@ -135,6 +181,8 @@ const SignUp = ({ onSignUp, onNavigateToSignIn }) => {
                 </div>
                 <input 
                   type={showPassword ? "text" : "password"} 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Create a strong password"
                   className="w-full h-13 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl pl-11 pr-11 text-[14px] font-bold text-[#0F172A] focus:outline-none focus:border-[#107050] focus:ring-1 focus:ring-[#107050] transition-all placeholder:text-[#94A3B8] placeholder:font-medium"
                 />
@@ -156,22 +204,36 @@ const SignUp = ({ onSignUp, onNavigateToSignIn }) => {
                   id="terms"
                   checked={agreed}
                   onChange={(e) => setAgreed(e.target.checked)}
+                  onClick={(e) => e.stopPropagation()} // prevent double toggling
                   className="w-5 h-5 rounded-lg border-[#CBD5E1] text-[#107050] focus:ring-[#107050] cursor-pointer"
                 />
               </div>
               <label htmlFor="terms" className="text-[13px] font-medium text-[#64748B] leading-relaxed cursor-pointer select-none">
-                I agree to the <button className="text-[#107050] font-bold hover:underline">Terms of Service</button> and acknowledge the 2026 Sustainability Privacy Policy.
+                I agree to the <button className="text-[#107050] font-bold hover:underline" onClick={(e) => e.stopPropagation()}>Terms of Service</button> and acknowledge the 2026 Sustainability Privacy Policy.
               </label>
             </div>
 
+            {error && (
+              <div className="bg-red-50 text-red-600 text-sm font-bold p-4 rounded-xl border border-red-100 mt-2">
+                {error}
+              </div>
+            )}
+
             <button 
-              onClick={onSignUp}
-              className="w-full h-14 bg-[#107050] hover:bg-[#065A3F] text-white rounded-2xl text-[16px] font-black shadow-[0_8px_24px_-6px_rgba(16,112,80,0.4)] transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2 group"
+              onClick={handleSignUpSubmit}
+              disabled={loading}
+              className="w-full h-14 bg-[#107050] hover:bg-[#065A3F] disabled:opacity-70 disabled:hover:bg-[#107050] text-white rounded-2xl text-[16px] font-black shadow-[0_8px_24px_-6px_rgba(16,112,80,0.4)] transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2 group"
             >
-              Create Account
-              <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-                 <ChevronLeft className="w-5 h-5 rotate-180" strokeWidth={3} />
-              </motion.span>
+              {loading ? (
+                 <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  Create Account
+                  <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+                     <ChevronLeft className="w-5 h-5 rotate-180" strokeWidth={3} />
+                  </motion.span>
+                </>
+              )}
             </button>
 
             <div className="flex items-center gap-4 py-1">
