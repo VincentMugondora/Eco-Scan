@@ -19,7 +19,10 @@ const Scanner = ({ onScanComplete }) => {
     startCamera();
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(err => console.error("Stop error", err));
+        // Silent catch for cases where stop is called on an inactive scanner
+        try {
+          scannerRef.current.stop().catch(() => {});
+        } catch (e) {}
       }
     };
   }, []);

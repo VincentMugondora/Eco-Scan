@@ -10,11 +10,28 @@ import { BottomNav } from "./components/layout/BottomNav";
 import { Sidebar } from "./components/layout/Sidebar";
 import { RightSidebar } from "./components/layout/RightSidebar";
 import { Globe, Clock, HelpCircle } from "lucide-react";
+import { supabase } from "./utils/supabaseClient";
 
 const App = () => {
   const [activeTab, setActiveTab ] = useState("home"); // Set default to home to see dashboard
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authView, setAuthView] = useState("signIn"); // "signIn" or "signUp"
+
+  React.useEffect(() => {
+    // Check initial session
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) setIsAuthenticated(true);
+    };
+    checkSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const renderScreen = () => {
     switch (activeTab) {
